@@ -35,57 +35,51 @@ const (
 // Car defines model for car.
 type Car struct {
 	// Brand Data that specifies the brand name of the Vehicle manufacturer
-	Brand *string `json:"brand,omitempty"`
+	Brand string `json:"brand"`
 
 	// DynamicData Data that changes during a car's operation
-	DynamicData *DynamicData `json:"dynamicData,omitempty"`
+	DynamicData DynamicData `json:"dynamicData"`
 
-	// Model Data that specifies the particular type of a Vehicle
-	Model *string `json:"model,omitempty"`
+	// Model Data that specifies the particular type of Vehicle
+	Model string `json:"model"`
 
-	// ProductionDate Data that specifies the official date the vehicle was declared to have exited pro- duction by the manufacturer.
-	ProductionDate         *openapiTypes.Date      `json:"productionDate,omitempty"`
-	TechnicalSpecification *TechnicalSpecification `json:"technicalSpecification,omitempty"`
+	// ProductionDate Data that specifies the official date the vehicle was declared to have exited production by the manufacturer.
+	ProductionDate         openapiTypes.Date      `json:"productionDate"`
+	TechnicalSpecification TechnicalSpecification `json:"technicalSpecification"`
 
 	// Vin A Vehicle Identification Number (VIN) which uniquely identifies a Vehicle
-	Vin *Vin `json:"vin,omitempty"`
+	Vin Vin `json:"vin"`
 }
 
 // CarBase Overview of a car
 type CarBase struct {
 	// Brand Data that specifies the brand name of the Vehicle manufacturer
-	Brand *string `json:"brand,omitempty"`
+	Brand string `json:"brand"`
 
-	// Model Data that specifies the particular type of a Vehicle
-	Model *string `json:"model,omitempty"`
+	// Model Data that specifies the particular type of Vehicle
+	Model string `json:"model"`
 
-	// ProductionDate Data that specifies the official date the vehicle was declared to have exited pro- duction by the manufacturer.
-	ProductionDate *openapiTypes.Date `json:"productionDate,omitempty"`
+	// ProductionDate Data that specifies the official date the vehicle was declared to have exited production by the manufacturer.
+	ProductionDate openapiTypes.Date `json:"productionDate"`
 
 	// Vin A Vehicle Identification Number (VIN) which uniquely identifies a Vehicle
-	Vin *Vin `json:"vin,omitempty"`
+	Vin Vin `json:"vin"`
 }
 
 // DynamicData Data that changes during a car's operation
 type DynamicData struct {
-	// DoorsLockState Data that specifies wether an object is locked or unlocked
-	DoorsLockState *LockState              `json:"doorsLockState,omitempty"`
-	EngineState    *DynamicDataEngineState `json:"engineState,omitempty"`
+	// DoorsLockState Data that specifies whether an object is locked or unlocked
+	DoorsLockState LockState              `json:"doorsLockState"`
+	EngineState    DynamicDataEngineState `json:"engineState"`
 
 	// FuelLevelPercentage Data that specifies the relation of remaining fuelCapacity to the maximum fuelCapacity in percentage
-	FuelLevelPercentage *int `json:"fuelLevelPercentage,omitempty"`
+	FuelLevelPercentage int `json:"fuelLevelPercentage"`
 
 	// Position Data that specifies the GeoCoordinate of a car
-	Position *struct {
-		// Latitude Data that specifies the distance from the equator
-		Latitude *float32 `json:"latitude,omitempty"`
+	Position DynamicDataPosition `json:"position"`
 
-		// Longitude Data that specifies the distance east or west from a line (meridian) passing through Greenwich
-		Longitude *float32 `json:"longitude,omitempty"`
-	} `json:"position,omitempty"`
-
-	// TrunkLockState Data that specifies wether an object is locked or unlocked
-	TrunkLockState *LockState `json:"trunkLockState,omitempty"`
+	// TrunkLockState Data that specifies whether an object is locked or unlocked
+	TrunkLockState LockState `json:"trunkLockState"`
 }
 
 // DynamicDataEngineState defines model for DynamicData.EngineState.
@@ -94,76 +88,92 @@ type DynamicDataEngineState string
 // FleetID Unique identification of a car fleet
 type FleetID = string
 
-// LockState Data that specifies wether an object is locked or unlocked
+// LockState Data that specifies whether an object is locked or unlocked
 type LockState string
 
 // TechnicalSpecification defines model for technicalSpecification.
 type TechnicalSpecification struct {
 	// Color Data on the description of the paint job of a car
-	Color *string `json:"color,omitempty"`
+	Color string `json:"color"`
 
 	// Consumption Data that specifies the amount of fuel consumed during car operation in units per 100 kilometers
-	Consumption *struct {
-		// City Data that specifies the amount of fuel that is consumed when driving within the city in: kW/100km or l/100km
-		City *float32 `json:"city,omitempty"`
-
-		// Combined Data that specifies the combined amount of fuel that is consumed in: kW / 100 km or l / 100 km
-		Combined *float32 `json:"combined,omitempty"`
-
-		// Overland Data that specifies the amount of fuel that is consumed when driving outside of a city in: kW/100km or l/100km
-		Overland *float32 `json:"overland,omitempty"`
-	} `json:"consumption,omitempty"`
+	Consumption TechnicalSpecificationConsumption `json:"consumption"`
 
 	// Emissions Data that specifies the CO2 emitted by a car during operation in gram per kilometer
-	Emissions *struct {
-		// City Data that specifies the amount of emis- sions when driving within the city in: g CO2 / km
-		City *float32 `json:"city,omitempty"`
-
-		// Combined Data that specifies the combined amount of emissions in: g CO2 / km. The combination is done by the manufacturer according to an industry-specific standard
-		Combined *float32 `json:"combined,omitempty"`
-
-		// Overland Data that specifies the amount of emis- sions when driving outside of a city in: g CO2 / km
-		Overland *float32 `json:"overland,omitempty"`
-	} `json:"emissions,omitempty"`
+	Emissions TechnicalSpecificationEmissions `json:"emissions"`
 
 	// Engine A physical unit that converts fuel into movement
-	Engine *struct {
-		// Power Data on the power the engine can provide in kW
-		Power *int `json:"power,omitempty"`
-
-		// Type Data that contains the manufacturer-given type description of the engine
-		Type *string `json:"type,omitempty"`
-	} `json:"engine,omitempty"`
+	Engine TechnicalSpecificationEngine `json:"engine"`
 
 	// Fuel Data that defines the source of energy that powers the car
-	Fuel *TechnicalSpecificationFuel `json:"fuel,omitempty"`
+	Fuel TechnicalSpecificationFuel `json:"fuel"`
 
 	// FuelCapacity Data that specifies the amount of fuel that can be carried with the car
-	FuelCapacity *string `json:"fuelCapacity,omitempty"`
+	FuelCapacity string `json:"fuelCapacity"`
 
 	// NumberOfDoors Data that defines the number of doors that are built into a car
-	NumberOfDoors *int `json:"numberOfDoors,omitempty"`
+	NumberOfDoors int `json:"numberOfDoors"`
 
 	// NumberOfSeats Data that defines the number of seats that are built into a car
-	NumberOfSeats *int `json:"numberOfSeats,omitempty"`
+	NumberOfSeats int `json:"numberOfSeats"`
 
 	// Tire A physical unit that serves as the point of contact between a car and the ground
-	Tire *struct {
-		// Manufacturer Data denoting the company responsible for the creation of a physical unit
-		Manufacturer *string `json:"manufacturer,omitempty"`
-
-		// Type Data that contains the manufacturer-given type description of the tire
-		Type *string `json:"type,omitempty"`
-	} `json:"tire,omitempty"`
+	Tire TechnicalSpecificationTire `json:"tire"`
 
 	// Transmission A physical unit responsible for managing the conversion rate of the engine (can be automated or manually operated)
-	Transmission *TechnicalSpecificationTransmission `json:"transmission,omitempty"`
+	Transmission TechnicalSpecificationTransmission `json:"transmission"`
 
 	// TrunkVolume Data on the physical volume of the trunk in liters
-	TrunkVolume *int `json:"trunkVolume,omitempty"`
+	TrunkVolume int `json:"trunkVolume"`
 
 	// Weight Data that specifies the total weight of a car when empty in kilograms (kg)
-	Weight *int `json:"weight,omitempty"`
+	Weight int `json:"weight"`
+}
+
+type DynamicDataPosition struct {
+	// Latitude Data that specifies the distance from the equator
+	Latitude float32 `json:"latitude"`
+
+	// Longitude Data that specifies the distance east or west from a line (meridian) passing through Greenwich
+	Longitude float32 `json:"longitude"`
+}
+
+type TechnicalSpecificationConsumption struct {
+	// City Data that specifies the amount of fuel that is consumed when driving within the city in: kW/100km or l/100km
+	City float32 `json:"city"`
+
+	// Combined Data that specifies the combined amount of fuel that is consumed in: kW / 100 km or l / 100 km
+	Combined float32 `json:"combined"`
+
+	// Overland Data that specifies the amount of fuel that is consumed when driving outside a city in: kW/100km or l/100km
+	Overland float32 `json:"overland"`
+}
+
+type TechnicalSpecificationEmissions struct {
+	// City Data that specifies the amount of emissions when driving within the city in: g CO2 / km
+	City float32 `json:"city"`
+
+	// Combined Data that specifies the combined amount of emissions in: g CO2 / km. The combination is done by the manufacturer according to an industry-specific standard
+	Combined float32 `json:"combined"`
+
+	// Overland Data that specifies the amount of emissions when driving outside a city in: g CO2 / km
+	Overland float32 `json:"overland"`
+}
+
+type TechnicalSpecificationEngine struct {
+	// Power Data on the power the engine can provide in kW
+	Power int `json:"power"`
+
+	// Type Data that contains the manufacturer-given type description of the engine
+	Type string `json:"type"`
+}
+
+type TechnicalSpecificationTire struct {
+	// Manufacturer Data denoting the company responsible for the creation of a physical unit
+	Manufacturer string `json:"manufacturer"`
+
+	// Type Data that contains the manufacturer-given type description of the tire
+	Type string `json:"type"`
 }
 
 // TechnicalSpecificationFuel Data that defines the source of energy that powers the car
