@@ -10,7 +10,7 @@ type Operations struct {
 	// TODO add client field here
 }
 
-func (o Operations) GetCarsInFleet(fleetID model.FleetIDParam) (*[]model.CarBase, error) {
+func (o Operations) GetCarsInFleet(fleetID model.FleetID) (*[]model.CarBase, error) {
 	// TODO implement me
 	return &[]model.CarBase{
 		{
@@ -24,12 +24,12 @@ func (o Operations) GetCarsInFleet(fleetID model.FleetIDParam) (*[]model.CarBase
 	}, nil
 }
 
-func (o Operations) RemoveCar(fleetID model.FleetIDParam, vin model.VinParam) error {
+func (o Operations) RemoveCar(fleetID model.FleetID, vin model.Vin) error {
 	// TODO implement me
 	return nil
 }
 
-func (o Operations) GetCar(fleetID model.FleetIDParam, vin model.VinParam) (*model.Car, error) {
+func (o Operations) GetCar(fleetID model.FleetID, vin model.Vin) (*model.Car, error) {
 	// TODO implement me
 	return &model.Car{
 		Brand: "Audi",
@@ -62,7 +62,7 @@ func (o Operations) GetCar(fleetID model.FleetIDParam, vin model.VinParam) (*mod
 	}, nil
 }
 
-func (o Operations) AddCarToFleet(fleetID model.FleetIDParam, vin model.VinParam) (*model.CarBase, error) {
+func (o Operations) AddCarToFleet(fleetID model.FleetID, vin model.Vin) (*model.CarBase, error) {
 	// TODO implement me
 	return &model.CarBase{
 		Brand: "Audi",
