@@ -8,4 +8,5 @@ type FleetDB interface {
 	AddCarToFleet(fleetId model.FleetID, vin model.Vin) error
 	RemoveCarFromFleet(fleetId model.FleetID, vin model.Vin) error
 	GetCarsForFleet(fleetId model.FleetID) ([]model.Vin, error)
+	IsCarInFleet(fleetId model.FleetID, vin model.Vin) (bool, error)
 }
