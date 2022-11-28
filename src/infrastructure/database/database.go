@@ -22,8 +22,8 @@ func (db Database) AddFleet(fleetId model.FleetID) error {
 }
 
 func (db Database) AddCarToFleet(fleetId model.FleetID, vin model.Vin) error {
-	carInFleet, err := IsCarInFleet(fleetId, vin)
-	if (error != nil) {
+	carInFleet, err := db.IsCarInFleet(fleetId, vin)
+	if (err != nil) {
 		return err
 	}
 	if carInFleet {
