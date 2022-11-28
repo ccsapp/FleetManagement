@@ -9,4 +9,6 @@ var (
 	ErrCarAlreadyInFleet  = errors.New("car already in fleet")
 	ErrFleetAlreadyExists = errors.New("fleet already exists")
 	ErrDomainAssertion    = errors.New("unexpected response from domain service")
+	ErrInvalidVin         = errors.New("invalid vin")
+	ErrInvalidFleetId     = errors.New("invalid fleet id")
 )

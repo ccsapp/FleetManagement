@@ -1,57 +1,85 @@
 package api
 
 import (
+	"PFleetManagement/logic/errors"
 	"PFleetManagement/logic/model"
 	"PFleetManagement/logic/operations"
+	"context"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
 
 type Controller struct {
-	operations operations.Operations
+	operations operations.Interface
 }
 
-func NewController(operations operations.Operations) Controller {
+func NewController(operations operations.Interface) Controller {
 	return Controller{
 		operations,
 	}
 }
 
-func (c Controller) GetCarsInFleet(ctx echo.Context, fleetID model.FleetIDParam) error {
-	cars, err := c.operations.GetCarsInFleet(fleetID)
+func extractRequestContext(ctx echo.Context) context.Context {
+	return ctx.Request().Context()
+}
 
-	if err != nil { // TODO do real error handling/forwarding
-		return echo.NewHTTPError(http.StatusInternalServerError, "Unable to fetch data")
+func (c Controller) GetCarsInFleet(ctx echo.Context, fleetID model.FleetIDParam) error {
+	if !model.IsFleetIDValid(fleetID) {
+		return errors.ErrInvalidFleetId
+	}
+
+	cars, err := c.operations.GetCarsInFleet(extractRequestContext(ctx), fleetID)
+
+	if err != nil {
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, cars)
 }
 
 func (c Controller) RemoveCar(ctx echo.Context, fleetID model.FleetIDParam, vin model.VinParam) error {
-	err := c.operations.RemoveCar(fleetID, vin)
+	if !model.IsFleetIDValid(fleetID) {
+		return errors.ErrInvalidFleetId
+	} else if !model.IsVinValid(vin) {
+		return errors.ErrInvalidVin
+	}
 
-	if err != nil { // TODO do real error handling/forwarding
-		return echo.NewHTTPError(http.StatusInternalServerError, "Unable to perform remove")
+	err := c.operations.RemoveCar(extractRequestContext(ctx), fleetID, vin)
+
+	if err != nil {
+		return err
 	}
 
 	return ctx.NoContent(http.StatusNoContent)
 }
 
 func (c Controller) GetCar(ctx echo.Context, fleetID model.FleetIDParam, vin model.VinParam) error {
-	car, err := c.operations.GetCar(fleetID, vin)
+	if !model.IsFleetIDValid(fleetID) {
+		return errors.ErrInvalidFleetId
+	} else if !model.IsVinValid(vin) {
+		return errors.ErrInvalidVin
+	}
 
-	if err != nil { // TODO do real error handling/forwarding
-		return echo.NewHTTPError(http.StatusInternalServerError, "Unable to fetch car")
+	car, err := c.operations.GetCar(extractRequestContext(ctx), fleetID, vin)
+
+	if err != nil {
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, car)
 }
 
 func (c Controller) AddCarToFleet(ctx echo.Context, fleetID model.FleetIDParam, vin model.VinParam) error {
-	car, err := c.operations.AddCarToFleet(fleetID, vin)
+	if !model.IsFleetIDValid(fleetID) {
+		return errors.ErrInvalidFleetId
+	} else if !model.IsVinValid(vin) {
+		return errors.ErrInvalidVin
+	}
 
-	if err != nil { // TODO do real error handling/forwarding, remember 204 if already assigned
-		return echo.NewHTTPError(http.StatusInternalServerError, "Unable to perform add")
+	car, err := c.operations.AddCarToFleet(extractRequestContext(ctx), fleetID, vin)
+
+	if err != nil {
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, car)
