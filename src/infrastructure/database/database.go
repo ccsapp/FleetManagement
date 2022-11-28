@@ -22,11 +22,11 @@ func (db Database) AddFleet(fleetId model.FleetID) error {
 }
 
 func (db Database) AddCarToFleet(fleetId model.FleetID, vin model.Vin) error {
-	if db.database[fleetId] == nil {
-		return errors.ErrFleetNotFound
+	carInFleet, err := IsCarInFleet(fleetId, vin)
+	if (error != nil) {
+		return err
 	}
-	index := db.getIndexOfCar(fleetId, vin)
-	if index != -1 {
+	if carInFleet {
 		return errors.ErrCarAlreadyInFleet
 	}
 	db.database[fleetId] = append(db.database[fleetId], vin)
@@ -59,4 +59,11 @@ func (db Database) getIndexOfCar(fleetId model.FleetID, vin model.Vin) int {
 		}
 	}
 	return -1
+}
+
+func (db Database) IsCarInFleet(fleetId model.FleetID, vin model.Vin) (bool, error) {
+	if db.database[fleetId] == nil {
+		return false, errors.ErrFleetNotFound
+	}
+	return db.getIndexOfCar(fleetId, vin) != -1, nil
 }
