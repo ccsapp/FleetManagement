@@ -1,75 +1,105 @@
 package operations
 
 import (
+	"PFleetManagement/infrastructure/database"
+	"PFleetManagement/infrastructure/dcar"
+	"PFleetManagement/logic/errors"
 	"PFleetManagement/logic/model"
-	openapiTypes "github.com/deepmap/oapi-codegen/pkg/types"
-	"time"
+	"context"
+	"fmt"
+	"net/http"
 )
 
 type Operations struct {
-	// TODO add client field here
+	database database.FleetDB
+	dcar     dcar.ClientWithResponsesInterface
 }
 
-func (o Operations) GetCarsInFleet(fleetID model.FleetID) (*[]model.CarBase, error) {
-	// TODO implement me
-	return &[]model.CarBase{
-		{
-			Brand: "Audi",
-			Model: "A3",
-			ProductionDate: openapiTypes.Date{
-				Time: time.Date(2017, 7, 21, 12, 0, 0, 0, time.UTC),
-			},
-			Vin: "WDD1690071J236589",
-		},
-	}, nil
+func NewOperations(fleetDB database.FleetDB, dcarClient dcar.ClientWithResponsesInterface) Operations {
+	return Operations{
+		database: fleetDB,
+		dcar:     dcarClient,
+	}
 }
 
-func (o Operations) RemoveCar(fleetID model.FleetID, vin model.Vin) error {
-	// TODO implement me
-	return nil
+func (o Operations) GetCarsInFleet(ctx context.Context, fleetID model.FleetID) ([]model.CarBase, error) {
+	vins, err := o.database.GetCarsForFleet(fleetID)
+	if err != nil {
+		return nil, err
+	}
+
+	cars := make([]model.CarBase, len(vins))
+	for index, vin := range vins {
+		carResponse, err := o.dcar.GetCarWithResponse(ctx, vin)
+		if err != nil {
+			return nil, err
+		}
+
+		if carResponse.JSON200 != nil {
+			cars[index] = carResponse.JSON200.ToModelBase()
+		} else {
+			statusCode := carResponse.StatusCode()
+			if statusCode == http.StatusNotFound {
+				return nil, fmt.Errorf("%w: car %s from fleet %s not in domain", errors.ErrDomainAssertion, vin, fleetID)
+			} else {
+				return nil, fmt.Errorf("%w: unknown error (domain code %d)", errors.ErrDomainAssertion, statusCode)
+			}
+		}
+	}
+
+	return cars, nil
 }
 
-func (o Operations) GetCar(fleetID model.FleetID, vin model.Vin) (*model.Car, error) {
-	// TODO implement me
-	return &model.Car{
-		Brand: "Audi",
-		DynamicData: model.DynamicData{
-			DoorsLockState:      model.LOCKED,
-			EngineState:         model.ON,
-			FuelLevelPercentage: 100,
-			Position:            model.DynamicDataPosition{},
-			TrunkLockState:      model.LOCKED,
-		},
-		Model: "A3",
-		ProductionDate: openapiTypes.Date{
-			Time: time.Date(2017, 7, 21, 12, 0, 0, 0, time.UTC),
-		},
-		TechnicalSpecification: model.TechnicalSpecification{
-			Color:         "black",
-			Consumption:   model.TechnicalSpecificationConsumption{},
-			Emissions:     model.TechnicalSpecificationEmissions{},
-			Engine:        model.TechnicalSpecificationEngine{},
-			Fuel:          model.PETROL,
-			FuelCapacity:  "54.0L;85.2kWh",
-			NumberOfDoors: 3,
-			NumberOfSeats: 5,
-			Tire:          model.TechnicalSpecificationTire{},
-			Transmission:  model.AUTOMATIC,
-			TrunkVolume:   435,
-			Weight:        1320,
-		},
-		Vin: "WDD1690071J236589",
-	}, nil
+func (o Operations) RemoveCar(_ context.Context, fleetID model.FleetID, vin model.Vin) error {
+	return o.database.RemoveCarFromFleet(fleetID, vin)
 }
 
-func (o Operations) AddCarToFleet(fleetID model.FleetID, vin model.Vin) (*model.CarBase, error) {
-	// TODO implement me
-	return &model.CarBase{
-		Brand: "Audi",
-		Model: "A3",
-		ProductionDate: openapiTypes.Date{
-			Time: time.Date(2017, 7, 21, 12, 0, 0, 0, time.UTC),
-		},
-		Vin: "WDD1690071J236589",
-	}, nil
+func (o Operations) GetCar(ctx context.Context, fleetID model.FleetID, vin model.Vin) (*model.Car, error) {
+	// TODO maybe add database operation for find single
+	vins, err := o.database.GetCarsForFleet(fleetID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, foundVin := range vins {
+		if foundVin == vin {
+			response, err := o.dcar.GetCarWithResponse(ctx, vin)
+			if err != nil {
+				return nil, err
+			}
+
+			if response.JSON200 != nil {
+				carData := response.JSON200.ToModel()
+				return &carData, nil
+			} else {
+				return nil, fmt.Errorf("%w: error code %d", errors.ErrDomainAssertion, response.StatusCode())
+			}
+		}
+	}
+
+	return nil, errors.ErrCarNotInFleet
+}
+
+func (o Operations) AddCarToFleet(ctx context.Context, fleetID model.FleetID, vin model.Vin) (*model.CarBase, error) {
+	carResponse, err := o.dcar.GetCarWithResponse(ctx, vin)
+	if err != nil {
+		return nil, err
+	}
+
+	if carResponse.JSON200 == nil {
+		statusCode := carResponse.StatusCode()
+		if statusCode == http.StatusNotFound {
+			return nil, errors.ErrCarNotFound
+		} else {
+			return nil, fmt.Errorf("%w: unknown error (domain code %d)", errors.ErrDomainAssertion, statusCode)
+		}
+	}
+
+	err = o.database.AddCarToFleet(fleetID, vin)
+	if err != nil {
+		return nil, err
+	}
+
+	baseData := carResponse.JSON200.ToModelBase()
+	return &baseData, nil
 }
