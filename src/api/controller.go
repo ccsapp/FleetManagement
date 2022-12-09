@@ -10,10 +10,10 @@ import (
 )
 
 type Controller struct {
-	operations operations.Interface
+	operations operations.IOperations
 }
 
-func NewController(operations operations.Interface) Controller {
+func NewController(operations operations.IOperations) Controller {
 	return Controller{
 		operations,
 	}

@@ -10,20 +10,20 @@ import (
 	"net/http"
 )
 
-type Operations struct {
+type operations struct {
 	database database.FleetDB
 	dcar     dcar.ClientWithResponsesInterface
 }
 
-func NewOperations(fleetDB database.FleetDB, dcarClient dcar.ClientWithResponsesInterface) Operations {
-	return Operations{
+func NewOperations(fleetDB database.FleetDB, dcarClient dcar.ClientWithResponsesInterface) IOperations {
+	return operations{
 		database: fleetDB,
 		dcar:     dcarClient,
 	}
 }
 
-func (o Operations) GetCarsInFleet(ctx context.Context, fleetID model.FleetID) ([]model.CarBase, error) {
-	vins, err := o.database.GetCarsForFleet(fleetID)
+func (o operations) GetCarsInFleet(ctx context.Context, fleetID model.FleetID) ([]model.CarBase, error) {
+	vins, err := o.database.GetCarsForFleet(ctx, fleetID)
 	if err != nil {
 		return nil, err
 	}
@@ -50,37 +50,31 @@ func (o Operations) GetCarsInFleet(ctx context.Context, fleetID model.FleetID) (
 	return cars, nil
 }
 
-func (o Operations) RemoveCar(_ context.Context, fleetID model.FleetID, vin model.Vin) error {
-	return o.database.RemoveCarFromFleet(fleetID, vin)
+func (o operations) RemoveCar(ctx context.Context, fleetID model.FleetID, vin model.Vin) error {
+	return o.database.RemoveCarFromFleet(ctx, fleetID, vin)
 }
 
-func (o Operations) GetCar(ctx context.Context, fleetID model.FleetID, vin model.Vin) (*model.Car, error) {
-	// TODO maybe add database operation for find single
-	vins, err := o.database.GetCarsForFleet(fleetID)
+func (o operations) GetCar(ctx context.Context, fleetID model.FleetID, vin model.Vin) (*model.Car, error) {
+	carInFleet, err := o.database.IsCarInFleet(ctx, fleetID, vin)
 	if err != nil {
 		return nil, err
 	}
-
-	for _, foundVin := range vins {
-		if foundVin == vin {
-			response, err := o.dcar.GetCarWithResponse(ctx, vin)
-			if err != nil {
-				return nil, err
-			}
-
-			if response.JSON200 != nil {
-				carData := response.JSON200.ToModel()
-				return &carData, nil
-			} else {
-				return nil, fmt.Errorf("%w: error code %d", errors.ErrDomainAssertion, response.StatusCode())
-			}
-		}
+	if !carInFleet {
+		return nil, errors.ErrCarNotInFleet
 	}
-
-	return nil, errors.ErrCarNotInFleet
+	response, err := o.dcar.GetCarWithResponse(ctx, vin)
+	if err != nil {
+		return nil, err
+	}
+	if response.JSON200 != nil {
+		carData := response.JSON200.ToModel()
+		return &carData, nil
+	} else {
+		return nil, fmt.Errorf("%w: error code %d", errors.ErrDomainAssertion, response.StatusCode())
+	}
 }
 
-func (o Operations) AddCarToFleet(ctx context.Context, fleetID model.FleetID, vin model.Vin) (*model.CarBase, error) {
+func (o operations) AddCarToFleet(ctx context.Context, fleetID model.FleetID, vin model.Vin) (*model.CarBase, error) {
 	carResponse, err := o.dcar.GetCarWithResponse(ctx, vin)
 	if err != nil {
 		return nil, err
@@ -95,7 +89,7 @@ func (o Operations) AddCarToFleet(ctx context.Context, fleetID model.FleetID, vi
 		}
 	}
 
-	err = o.database.AddCarToFleet(fleetID, vin)
+	err = o.database.AddCarToFleet(ctx, fleetID, vin)
 	if err != nil {
 		return nil, err
 	}
