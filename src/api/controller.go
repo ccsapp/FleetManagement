@@ -40,7 +40,8 @@ func (c Controller) GetCarsInFleet(ctx echo.Context, fleetID model.FleetIDParam)
 func (c Controller) RemoveCar(ctx echo.Context, fleetID model.FleetIDParam, vin model.VinParam) error {
 	if !model.IsFleetIDValid(fleetID) {
 		return errors.ErrInvalidFleetId
-	} else if !model.IsVinValid(vin) {
+	}
+	if !model.IsVinValid(vin) {
 		return errors.ErrInvalidVin
 	}
 
@@ -56,7 +57,8 @@ func (c Controller) RemoveCar(ctx echo.Context, fleetID model.FleetIDParam, vin 
 func (c Controller) GetCar(ctx echo.Context, fleetID model.FleetIDParam, vin model.VinParam) error {
 	if !model.IsFleetIDValid(fleetID) {
 		return errors.ErrInvalidFleetId
-	} else if !model.IsVinValid(vin) {
+	}
+	if !model.IsVinValid(vin) {
 		return errors.ErrInvalidVin
 	}
 
@@ -72,7 +74,8 @@ func (c Controller) GetCar(ctx echo.Context, fleetID model.FleetIDParam, vin mod
 func (c Controller) AddCarToFleet(ctx echo.Context, fleetID model.FleetIDParam, vin model.VinParam) error {
 	if !model.IsFleetIDValid(fleetID) {
 		return errors.ErrInvalidFleetId
-	} else if !model.IsVinValid(vin) {
+	}
+	if !model.IsVinValid(vin) {
 		return errors.ErrInvalidVin
 	}
 
