@@ -3,7 +3,10 @@ package main
 import (
 	"PFleetManagement/infrastructure/database"
 	"PFleetManagement/infrastructure/dcar"
+	fleetErrors "PFleetManagement/logic/errors"
 	"PFleetManagement/logic/operations"
+	"context"
+	"errors"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"net/http"
@@ -44,7 +47,7 @@ func loadConfig() (*Config, error) {
 
 	domainServer := os.Getenv(EnvDomainServer)
 	if domainServer == "" {
-		domainServer = "https://cm-d-carimplementation-mock-api.cloud.iai.kit.edu"
+		domainServer = "https://cm-d-carimpl.cloud.iai.kit.edu/"
 
 		// TODO make env run
 		// return nil, errors.New("no domain server given")
@@ -83,9 +86,13 @@ func main() {
 		}))
 	}
 
-	fleetDb := database.OpenDatabase()
-	err = fleetDb.AddFleet("xk48jpgz") // TODO manage fleets correctly
+	fleetDb, err := database.OpenDatabase()
 	if err != nil {
+		e.Logger.Fatal(err)
+		os.Exit(ExitDatabaseOpenErr)
+	}
+	err = fleetDb.AddFleet(context.TODO(), "xk48jpgz") // TODO manage fleets correctly
+	if err != nil && !errors.Is(err, fleetErrors.ErrFleetAlreadyExists) {
 		e.Logger.Fatal(err)
 		os.Exit(ExitDatabaseOpenErr)
 	}
