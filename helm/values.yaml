@@ -5,6 +5,12 @@ base-chart:
   affinity: {}
 
   extraEnvVars:
+    - name: PFL_ALLOW_ORIGINS
+      value: "*.cloud.iai.kit.edu"
+    - name: PFL_DOMAIN_SERVER
+      value: https://cm-d-carimpl.cloud.iai.kit.edu
+    - name: PFL_DOMAIN_TIMEOUT
+      value: 5s
     # How-To: Remove to square brakets array placeholder in the line above if you wanna define additional environment variables
     # Example for adding a defined value to a Pod/Container
     # - name: PACT_BROKER_PORT

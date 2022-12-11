@@ -23,12 +23,6 @@ const (
 	EnvDomainTimeout = "PFL_DOMAIN_TIMEOUT"
 )
 
-const (
-	ExitConfigErr       = 9
-	ExitDomainClientErr = 10
-	ExitDatabaseOpenErr = 11
-)
-
 type Config struct {
 	allowOrigins  []string
 	domainServer  string
@@ -41,21 +35,24 @@ func loadConfig() (*Config, error) {
 	if allowOriginsString != "" {
 		allowOrigins = strings.Split(allowOriginsString, ",")
 	} else {
-		// TODO make env run
-		allowOrigins = []string{"*.cloud.iai.kit.edu"}
+		allowOrigins = []string{}
 	}
 
 	domainServer := os.Getenv(EnvDomainServer)
 	if domainServer == "" {
-		domainServer = "https://cm-d-carimpl.cloud.iai.kit.edu/"
-
-		// TODO make env run
-		// return nil, errors.New("no domain server given")
+		return nil, errors.New("no domain server given")
 	}
 
 	timeoutString := os.Getenv(EnvDomainTimeout)
-	domainTimeout, err := time.ParseDuration(timeoutString)
-	if err != nil {
+	var domainTimeout time.Duration
+
+	if timeoutString != "" {
+		var err error // declaring with := below would create separate domainTimeout var in this scope
+		domainTimeout, err = time.ParseDuration(timeoutString)
+		if err != nil {
+			return nil, errors.New("invalid domain timeout configured")
+		}
+	} else {
 		domainTimeout = 5 * time.Second
 	}
 
@@ -73,28 +70,21 @@ func main() {
 	config, err := loadConfig()
 	if err != nil {
 		e.Logger.Fatal(err)
-		os.Exit(ExitConfigErr)
 	}
 
 	if len(config.allowOrigins) > 0 {
 		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-			Skipper:      middleware.DefaultSkipper,
 			AllowOrigins: config.allowOrigins,
-			AllowMethods: []string{
-				http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete,
-			},
 		}))
 	}
 
 	fleetDb, err := database.OpenDatabase()
 	if err != nil {
 		e.Logger.Fatal(err)
-		os.Exit(ExitDatabaseOpenErr)
 	}
 	err = fleetDb.AddFleet(context.TODO(), "xk48jpgz") // TODO manage fleets correctly
 	if err != nil && !errors.Is(err, fleetErrors.ErrFleetAlreadyExists) {
 		e.Logger.Fatal(err)
-		os.Exit(ExitDatabaseOpenErr)
 	}
 
 	dcarClient, err := dcar.NewClientWithResponses(config.domainServer, func(c *dcar.Client) error {
@@ -107,7 +97,6 @@ func main() {
 
 	if err != nil {
 		e.Logger.Fatal(err)
-		os.Exit(ExitDomainClientErr)
 	}
 
 	operationsInstance := operations.NewOperations(fleetDb, dcarClient)
