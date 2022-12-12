@@ -18,22 +18,28 @@ func messageResponse(ctx echo.Context, code int, message string) {
 	if ctx.Request().Method == http.MethodHead {
 		err = ctx.NoContent(code)
 	} else {
+		// if the request was anything but head, return the message in a json object
 		err = ctx.JSON(code, errorContent{
 			message,
 		})
 	}
 
+	// if the response could not be written, log why
 	if err != nil {
 		ctx.Logger().Error(err)
 	}
 }
 
+// The FleetErrorHandler maps errors returned by the model (i.e. errors from logic/errors) to HTTP
+// responses describing the error. This includes determining the correct status codes as defined in
+// the specification.
 func FleetErrorHandler(err error, ctx echo.Context) {
 	// if we already have a response, don't do anything
 	if ctx.Response().Committed {
 		return
 	}
 
+	// "... not found" errors result in a 404 response
 	if stdErrors.Is(err, fleetErrors.ErrFleetNotFound) || stdErrors.Is(err, fleetErrors.ErrCarNotFound) ||
 		stdErrors.Is(err, fleetErrors.ErrCarNotInFleet) {
 
@@ -41,16 +47,19 @@ func FleetErrorHandler(err error, ctx echo.Context) {
 		return
 	}
 
+	// [logic/errors.ErrCarAlreadyInFleet] is not considered a failure (b/c of idempotency)
 	if stdErrors.Is(err, fleetErrors.ErrCarAlreadyInFleet) {
 		messageResponse(ctx, http.StatusNoContent, err.Error())
 		return
 	}
 
+	// invalid fleet id or vin, being an invalid/bad request, results in 400
 	if stdErrors.Is(err, fleetErrors.ErrInvalidFleetId) || stdErrors.Is(err, fleetErrors.ErrInvalidVin) {
 		messageResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
+	// if the returned error is explicitly an HTTP error, return the contained status code
 	if httpErr, ok := err.(*echo.HTTPError); ok {
 		// use the HTTP standard error message
 		message := http.StatusText(httpErr.Code)
@@ -64,7 +73,7 @@ func FleetErrorHandler(err error, ctx echo.Context) {
 		return
 	}
 
-	// unexpected error
+	// any other error, which was not handled above; this can be any error returned from library calls
 	ctx.Logger().Error(err)
 	messageResponse(ctx, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 }

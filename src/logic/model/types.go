@@ -1,4 +1,4 @@
-// Package model provides primitives to interact with the openapi HTTP API.
+// Package model provides the data model of this service
 package model
 
 import (
