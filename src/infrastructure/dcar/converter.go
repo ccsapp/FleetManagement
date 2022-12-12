@@ -4,8 +4,6 @@ import (
 	"PFleetManagement/logic/model"
 )
 
-// TODO validate enum values
-
 func (t *TechnicalSpecification) toModel() model.TechnicalSpecification {
 	return model.TechnicalSpecification{
 		Color: t.Color,
@@ -50,6 +48,7 @@ func (d *DynamicData) toModel() model.DynamicData {
 	}
 }
 
+// ToModel deep-copies a dcar.Car to a model.Car
 func (c *Car) ToModel() model.Car {
 	return model.Car{
 		Brand:                  c.Brand,
@@ -61,6 +60,7 @@ func (c *Car) ToModel() model.Car {
 	}
 }
 
+// ToModelBase deep-copies the relevant information from a dcar.Car to a model.CarBase
 func (c *Car) ToModelBase() model.CarBase {
 	return model.CarBase{
 		Brand:          c.Brand,
@@ -114,6 +114,7 @@ func newDynamicDataFromModel(d *model.DynamicData) DynamicData {
 	}
 }
 
+// NewCarFromModel deep-copies a model.Car to a dcar.Car
 func NewCarFromModel(c *model.Car) Car {
 	return Car{
 		Brand:                  c.Brand,

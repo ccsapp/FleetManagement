@@ -1,4 +1,3 @@
-// Package api provides primitives to interact with the openapi HTTP API.
 package api
 
 import (

@@ -1,3 +1,4 @@
+// Package api contains the request handlers to be connected to the echo router
 package api
 
 import (
@@ -9,6 +10,10 @@ import (
 	"net/http"
 )
 
+// Controller The implementation of the request handlers. Delegates parsed (by ServerInterfaceWrapper)
+// and validated requests to operations.IOperations implementation and writes the operation's return
+// value as json response with the correct response code.
+// Errors are simply returned to be later handled by the HTTPErrorHandler of the echo.Echo instance.
 type Controller struct {
 	operations operations.IOperations
 }
@@ -19,6 +24,8 @@ func NewController(operations operations.IOperations) Controller {
 	}
 }
 
+// extractRequestContext Get a context.Context from an echo.Context which is bound to the user request
+// and thus cancelled when the HTTP request is closed before it returns
 func extractRequestContext(ctx echo.Context) context.Context {
 	return ctx.Request().Context()
 }

@@ -1,4 +1,4 @@
-// Package dcar provides primitives to interact with the openapi HTTP API.
+// Package dcar provides primitives to interact with the HTTP API of the "Car" service.
 package dcar
 
 import (
