@@ -1,0 +1,358 @@
+openapi: 3.0.0
+info:
+  title: FleetManagement
+  version: 1.0.0
+  description: Application Microservice API 1.0.0 providing the functionality for the capability Management of the Fleet
+servers: [ ]
+paths:
+  /fleets/{fleetID}/cars:
+    parameters:
+      - $ref: '#/components/parameters/fleetIDParam'
+    get:
+      summary: Get Overview of All Cars Assigned to the Given Fleet
+      operationId: getCarsInFleet
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/carBase'
+        '400':
+          $ref: '#/components/responses/fleetIdInvalid'
+        '404':
+          $ref: '#/components/responses/carFleetRelationNotFound'
+  /fleets/{fleetID}/cars/{vin}:
+    parameters:
+      - $ref: '#/components/parameters/fleetIDParam'
+      - $ref: '#/components/parameters/vinParam'
+    get:
+      summary: Get Status of the Car With the Given VIN Assigned to the Given Fleet
+      operationId: getCar
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/car'
+        '400':
+          $ref: '#/components/responses/fleetIdOrVinInvalid'
+        '404':
+          $ref: '#/components/responses/carFleetRelationNotFound'
+    put:
+      summary: Add a Car to the Fleet
+      operationId: addCarToFleet
+      responses:
+        '200':
+          description: The operation was successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/carBase'
+        '204':
+          $ref: '#/components/responses/carAlreadyAssignedToFleet'
+        '400':
+          $ref: '#/components/responses/fleetIdOrVinInvalid'
+        '404':
+            $ref: '#/components/responses/carFleetRelationNotFound'
+    delete:
+      summary: Remove Car From Fleet
+      operationId: removeCar
+      responses:
+        '204':
+          $ref: '#/components/responses/removed'
+        '400':
+          $ref: '#/components/responses/fleetIdOrVinInvalid'
+        '404':
+          $ref: '#/components/responses/carFleetRelationNotFound'
+
+components:
+  schemas:
+    carBase:
+      type: object
+      required:
+        - vin
+        - brand
+        - model
+        - productionDate
+      properties:
+        vin:
+          $ref: '#/components/schemas/vin'
+        brand:
+          type: string
+          example: "Audi"
+          description: Data that specifies the brand name of the Vehicle manufacturer
+        model:
+          type: string
+          example: "A3"
+          description: Data that specifies the particular type of a Vehicle
+        productionDate:
+          type: string
+          format: date
+          example: "2017-07-21"
+          description: Data that specifies the official date the vehicle was declared to have exited production by the manufacturer.
+      description: Overview of a car
+    car:
+      allOf:
+        - $ref: '#/components/schemas/carBase'
+        - type: object
+          required:
+            - technicalSpecification
+            - dynamicData
+          properties:
+            technicalSpecification:
+              $ref: '#/components/schemas/technicalSpecification'
+            dynamicData:
+              $ref: '#/components/schemas/dynamicData'
+      description: A specific type of vehicle
+    technicalSpecification:
+      type: object
+      required:
+        - color
+        - weight
+        - trunkVolume
+        - engine
+        - transmission
+        - tire
+        - numberOfSeats
+        - numberOfDoors
+        - fuel
+        - fuelCapacity
+        - consumption
+        - emissions
+      properties:
+        color:
+          type: string
+          example: "black"
+          description: Data on the description of the paint job of a car
+        weight:
+          type: integer
+          example: 1320
+          description: Data that specifies the total weight of a car when empty in kilograms (kg)
+        trunkVolume:
+          type: integer
+          example: 435
+          description: Data on the physical volume of the trunk in liters
+        engine:
+          type: object
+          required:
+            - type
+            - power
+          properties:
+            type:
+              type: string
+              example: 180 CDI
+              description: Data that contains the manufacturer-given type description of the engine
+            power:
+              type: integer
+              example: 150
+              description: Data on the power the engine can provide in kW
+          description: A physical unit that converts fuel into movement
+        transmission:
+          type: string
+          enum:
+            - MANUAL
+            - AUTOMATIC
+          example: MANUAL
+          description: A physical unit responsible for managing the conversion rate of the engine (can be automated or manually operated)
+        tire:
+          type: object
+          required:
+            - manufacturer
+            - type
+          properties:
+            manufacturer:
+              type: string
+              example: GOODYEAR
+              description: Data denoting the company responsible for the creation of a physical unit
+            type:
+              type: string
+              pattern: '^(\d{3}\/\d{2})([RD]F?)(\d{2})(\d{2,3})?(A[1-8]|[B-H]|[J-N]|[P-W]|Y)?$'
+              example: 185/65R15
+              description: Data that contains the manufacturer-given type description of the tire
+          description: A physical unit that serves as the point of contact between a car and the ground
+        numberOfSeats:
+          type: integer
+          example: 5
+          description: Data that defines the number of seats that are built into a car
+        numberOfDoors:
+          type: integer
+          example: 5
+          description: Data that defines the number of doors that are built into a car
+        fuel:
+          type: string
+          enum:
+            - DIESEL
+            - PETROL
+            - ELECTRIC
+            - HYBRID_DIESEL
+            - HYBRID_PETROL
+          example: ELECTRIC
+          description: Data that defines the source of energy that powers the car
+        fuelCapacity:
+          type: string
+          pattern: '^((\d+\.\d+L)|(\d+\.\d+kWh)|((\d+\.\d+L);(\d+\.\d+kWh)))$'
+          example: 54.0L;85.2kWh
+          description: Data that specifies the amount of fuel that can be carried with the car
+        consumption:
+          type: object
+          required:
+            - city
+            - overland
+            - combined
+          properties:
+            city:
+              type: number
+              example: 6.4
+              description: "Data that specifies the amount of fuel that is consumed when driving within the city in: kW/100km or l/100km"
+            overland:
+              type: number
+              example: 4.6
+              description: "Data that specifies the amount of fuel that is consumed when driving outside of a city in: kW/100km or l/100km"
+            combined:
+              type: number
+              example: 5.2
+              description: "Data that specifies the combined amount of fuel that is consumed in: kW / 100 km or l / 100 km"
+          description: Data that specifies the amount of fuel consumed during car operation in units per 100 kilometers
+        emissions:
+          type: object
+          required:
+            - city
+            - overland
+            - combined
+          properties:
+            city:
+              type: number
+              example: 168
+              description: "Data that specifies the amount of emissions when driving within the city in: g CO2 / km"
+            overland:
+              type: number
+              example: 122
+              description: "Data that specifies the amount of emissions when driving outside of a city in: g CO2 / km"
+            combined:
+              type: number
+              example: 137
+              description: "Data that specifies the combined amount of emissions in: g CO2 / km. The combination is done by the manufacturer according to an industry-specific standard"
+          description: Data that specifies the CO2 emitted by a car during operation in gram per kilometer
+    dynamicData:
+      type: object
+      required:
+        - fuelLevelPercentage
+        - position
+        - trunkLockState
+        - doorsLockState
+        - engineState
+      properties:
+        fuelLevelPercentage:
+          type: integer
+          example: 100
+          description: Data that specifies the relation of remaining fuelCapacity to the maximum fuelCapacity in percentage
+        position:
+          type: object
+          required:
+            - latitude
+            - longitude
+          properties:
+            latitude:
+              type: number
+              example: 42.0
+              description: Data that specifies the distance from the equator
+            longitude:
+              type: number
+              example: 100.0
+              description: Data that specifies the distance east or west from a line (meridian) passing through Greenwich
+          description: Data that specifies the GeoCoordinate of a car
+        trunkLockState:
+          $ref: '#/components/schemas/lockState'
+        doorsLockState:
+          $ref: '#/components/schemas/lockState'
+        engineState:
+          type: string
+          enum:
+            - 'ON'
+            - 'OFF'
+      description: Data that changes during a car's operation
+    lockState:
+      type: string
+      enum:
+        - LOCKED
+        - UNLOCKED
+      description: Data that specifies whether an object is locked or unlocked
+    fleetID:
+      type: string
+      pattern: '^[a-zA-Z0-9]{8}$'
+      example: xk48jpgz
+      description: Unique identification of a car fleet
+    vin:
+      type: string
+      pattern: '^[A-HJ-NPR-Z0-9]{13}[0-9]{4}$'
+      example: WDD1690071J236589
+      description: A Vehicle Identification Number (VIN) which uniquely identifies a Vehicle
+
+    # -- Errors --
+    genericError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: "An error occurred"
+          description: A message that describes the error
+    carFleetRelationError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          enum: [
+            "The specified car was not found",
+            "The specified fleet was not found",
+            "The specified car is not assigned to the specified fleet"
+          ]
+
+  responses:
+    fleetIdInvalid:
+      description: The fleetID has an invalid format. A technical error message useful for debugging is provided in the response body.
+      content:
+          application/json:
+            schema:
+                $ref: '#/components/schemas/genericError'
+    fleetIdOrVinInvalid:
+      description: The fleetID or VIN has an invalid format. A technical error message useful for debugging is provided in the response body.
+      content:
+        application/json:
+            schema:
+                $ref: '#/components/schemas/genericError'
+    carFleetRelationNotFound:
+      description: The given fleetID or VIN does not exist, or the car is not assigned to the given fleet. Details are provided in form of a fixed error message.
+      content:
+        application/json:
+            schema:
+                $ref: '#/components/schemas/carFleetRelationError'
+    carAlreadyAssignedToFleet:
+      description: The specified car is already assigned to the specified fleet.
+    removed:
+      description: The car was removed successfully.
+  parameters:
+    vinParam:
+      in: path
+      name: vin
+      required: true
+      description: The Vehicle Identification Number (VIN) as unique number of a vehicle
+      example: "G1YZ23J9P58034278"
+      style: simple
+      schema:
+        $ref: '#/components/schemas/vin'
+    fleetIDParam:
+      in: path
+      name: fleetID
+      required: true
+      description: Identification number of a car fleet
+      style: simple
+      schema:
+        $ref: '#/components/schemas/fleetID'
