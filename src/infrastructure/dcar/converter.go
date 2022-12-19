@@ -42,7 +42,7 @@ func (d *DynamicData) toModel() model.DynamicData {
 		FuelLevelPercentage: d.FuelLevelPercentage,
 		Position: model.DynamicDataPosition{
 			Latitude:  d.Position.Latitude,
-			Longitude: d.Position.Latitude,
+			Longitude: d.Position.Longitude,
 		},
 		TrunkLockState: model.LockState(d.TrunkLockState),
 	}
@@ -108,7 +108,7 @@ func newDynamicDataFromModel(d *model.DynamicData) DynamicData {
 		FuelLevelPercentage: d.FuelLevelPercentage,
 		Position: DynamicDataPosition{
 			Latitude:  d.Position.Latitude,
-			Longitude: d.Position.Latitude,
+			Longitude: d.Position.Longitude,
 		},
 		TrunkLockState: DynamicDataLockState(d.TrunkLockState),
 	}

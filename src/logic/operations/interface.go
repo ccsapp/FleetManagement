@@ -1,6 +1,8 @@
 // Package operations contains the task processes which can be triggered via this service's HTTP API
 package operations
 
+//go:generate mockgen -source=interface.go -package=mocks -destination=../../mocks/operationsinterface_mock.go
+
 import (
 	"PFleetManagement/logic/model"
 	"context"

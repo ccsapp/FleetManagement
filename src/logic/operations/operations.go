@@ -3,7 +3,7 @@ package operations
 import (
 	"PFleetManagement/infrastructure/database"
 	"PFleetManagement/infrastructure/dcar"
-	"PFleetManagement/logic/errors"
+	"PFleetManagement/logic/fleetErrors"
 	"PFleetManagement/logic/model"
 	"context"
 	"fmt"
@@ -52,14 +52,13 @@ func (o operations) GetCarsInFleet(ctx context.Context, fleetID model.FleetID) (
 			cars[index] = carResponse.JSON200.ToModelBase()
 		} else {
 			// if the retrieval fails for any car, the whole operation fails
-
 			statusCode := carResponse.StatusCode()
 			if statusCode == http.StatusNotFound {
-				// this error by the domain is known but results from an inconsistency
 				// (car was deleted since it was added to the fleet -> fleet database references unknown data)
-				return nil, fmt.Errorf("%w: car %s from fleet %s not in domain", errors.ErrDomainAssertion, vin, fleetID)
+				// this error by the domain is known but results from an inconsistency
+				return nil, fmt.Errorf("%w: car %s from fleet %s not in domain", fleetErrors.ErrDomainAssertion, vin, fleetID)
 			} else {
-				return nil, fmt.Errorf("%w: unknown error (domain code %d)", errors.ErrDomainAssertion, statusCode)
+				return nil, fmt.Errorf("%w: unknown error (domain code %d)", fleetErrors.ErrDomainAssertion, statusCode)
 			}
 		}
 	}
@@ -82,7 +81,7 @@ func (o operations) GetCar(ctx context.Context, fleetID model.FleetID, vin model
 		return nil, err
 	}
 	if !carInFleet {
-		return nil, errors.ErrCarNotInFleet
+		return nil, fleetErrors.ErrCarNotInFleet
 	}
 
 	// --- Car service interaction ---
@@ -95,7 +94,7 @@ func (o operations) GetCar(ctx context.Context, fleetID model.FleetID, vin model
 		carData := response.JSON200.ToModel()
 		return &carData, nil
 	} else {
-		return nil, fmt.Errorf("%w: error code %d", errors.ErrDomainAssertion, response.StatusCode())
+		return nil, fmt.Errorf("%w: error code %d", fleetErrors.ErrDomainAssertion, response.StatusCode())
 	}
 }
 
@@ -111,9 +110,9 @@ func (o operations) AddCarToFleet(ctx context.Context, fleetID model.FleetID, vi
 		statusCode := carResponse.StatusCode()
 		if statusCode == http.StatusNotFound {
 			// it is a defined error of this operation that the car does not exist
-			return nil, errors.ErrCarNotFound
+			return nil, fleetErrors.ErrCarNotFound
 		} else {
-			return nil, fmt.Errorf("%w: unknown error (domain code %d)", errors.ErrDomainAssertion, statusCode)
+			return nil, fmt.Errorf("%w: unknown error (domain code %d)", fleetErrors.ErrDomainAssertion, statusCode)
 		}
 	}
 

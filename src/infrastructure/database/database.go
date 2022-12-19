@@ -1,7 +1,7 @@
 package database
 
 import (
-	"PFleetManagement/logic/errors"
+	"PFleetManagement/logic/fleetErrors"
 	"PFleetManagement/logic/model"
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
@@ -57,7 +57,7 @@ func (m *connection) AddFleet(ctx context.Context, fleetId model.FleetID) error 
 
 	// MongoDB detects duplicate _id (in BSON, field FleetId in struct)
 	if mongo.IsDuplicateKeyError(err) {
-		return errors.ErrFleetAlreadyExists
+		return fleetErrors.ErrFleetAlreadyExists
 	}
 
 	return err
@@ -77,12 +77,12 @@ func (m *connection) AddCarToFleet(ctx context.Context, fleetId model.FleetID, v
 	}
 	if result.MatchedCount == 0 {
 		// this case occurs if the filter (by fleet ID) did not match any document -> no fleet with that ID exists
-		return errors.ErrFleetNotFound
+		return fleetErrors.ErrFleetNotFound
 	}
 	if result.ModifiedCount == 0 {
-		// if a document matched but none was modified, the $addToSet did not perform a change
 		//  -> the VIN was already in the set
-		return errors.ErrCarAlreadyInFleet
+		// if a document matched but none was modified, the $addToSet did not perform a change
+		return fleetErrors.ErrCarAlreadyInFleet
 	}
 
 	// no error nor invalid post conditions -> success
@@ -99,7 +99,7 @@ func (m *connection) GetCarsForFleet(ctx context.Context, fleetId model.FleetID)
 
 	if err == mongo.ErrNoDocuments {
 		// this error is returned if no fleet matched the ID filter
-		return nil, errors.ErrFleetNotFound
+		return nil, fleetErrors.ErrFleetNotFound
 	}
 
 	// the fleet.Vins might be invalid data if Decode returned an error but errors should be checked first
@@ -144,12 +144,12 @@ func (m *connection) RemoveCarFromFleet(ctx context.Context, fleetId model.Fleet
 	}
 	if result.MatchedCount == 0 {
 		// this case occurs if the filter (by fleet ID) did not match any document -> no fleet with that ID exists
-		return errors.ErrFleetNotFound
+		return fleetErrors.ErrFleetNotFound
 	}
 	if result.ModifiedCount == 0 {
 		// if a document matched but none was modified, the $pullAll did not perform a change
 		//  -> the VIN was not contained in the array
-		return errors.ErrCarNotInFleet
+		return fleetErrors.ErrCarNotInFleet
 	}
 
 	// no error nor invalid post conditions -> success

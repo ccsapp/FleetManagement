@@ -1,8 +1,8 @@
 package api
 
 import (
-	fleetErrors "PFleetManagement/logic/errors"
-	stdErrors "errors"
+	"PFleetManagement/logic/fleetErrors"
+	"errors"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
@@ -40,21 +40,21 @@ func FleetErrorHandler(err error, ctx echo.Context) {
 	}
 
 	// "... not found" errors result in a 404 response
-	if stdErrors.Is(err, fleetErrors.ErrFleetNotFound) || stdErrors.Is(err, fleetErrors.ErrCarNotFound) ||
-		stdErrors.Is(err, fleetErrors.ErrCarNotInFleet) {
+	if errors.Is(err, fleetErrors.ErrFleetNotFound) || errors.Is(err, fleetErrors.ErrCarNotFound) ||
+		errors.Is(err, fleetErrors.ErrCarNotInFleet) {
 
 		messageResponse(ctx, http.StatusNotFound, err.Error())
 		return
 	}
 
 	// [logic/errors.ErrCarAlreadyInFleet] is not considered a failure (b/c of idempotency)
-	if stdErrors.Is(err, fleetErrors.ErrCarAlreadyInFleet) {
+	if errors.Is(err, fleetErrors.ErrCarAlreadyInFleet) {
 		messageResponse(ctx, http.StatusNoContent, err.Error())
 		return
 	}
 
 	// invalid fleet id or vin, being an invalid/bad request, results in 400
-	if stdErrors.Is(err, fleetErrors.ErrInvalidFleetId) || stdErrors.Is(err, fleetErrors.ErrInvalidVin) {
+	if errors.Is(err, fleetErrors.ErrInvalidFleetId) || errors.Is(err, fleetErrors.ErrInvalidVin) {
 		messageResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
