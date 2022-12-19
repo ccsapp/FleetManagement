@@ -1,9 +1,10 @@
 package main
 
 import (
+	"PFleetManagement/api"
 	"PFleetManagement/infrastructure/database"
 	"PFleetManagement/infrastructure/dcar"
-	fleetErrors "PFleetManagement/logic/errors"
+	"PFleetManagement/logic/fleetErrors"
 	"PFleetManagement/logic/operations"
 	"context"
 	"errors"
@@ -13,8 +14,6 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"PFleetManagement/api"
 )
 
 const (

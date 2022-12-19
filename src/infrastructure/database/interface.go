@@ -1,5 +1,7 @@
 package database
 
+//go:generate mockgen -source=interface.go -package=mocks -destination=../../mocks/database_mock.go
+
 import (
 	"PFleetManagement/logic/model"
 	"context"
