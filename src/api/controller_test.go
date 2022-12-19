@@ -1,7 +1,6 @@
 package api
 
 import (
-	"PFleetManagement/logic/fleetErrors"
 	"PFleetManagement/logic/model"
 	"PFleetManagement/mocks"
 	"context"
@@ -69,22 +68,6 @@ func TestController_GetCarsInFleet_success(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestController_GetCarsInFleet_invalidFleetId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	invalidFleetId := "jJd9j#"
-
-	mockEchoContext := mocks.NewMockContext(ctrl)
-	mockOperations := mocks.NewMockIOperations(ctrl)
-
-	controller := NewController(mockOperations)
-
-	err := controller.GetCarsInFleet(mockEchoContext, invalidFleetId)
-
-	assert.ErrorIs(t, err, fleetErrors.ErrInvalidFleetId)
-}
-
 func TestController_GetCarsInFleet_operationsError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -135,38 +118,58 @@ func TestController_GetCar_success(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestController_GetCar_invalidVIN(t *testing.T) {
+// TestController_GetCar_invalidVin_success tests that the VIN validity is not checked
+// by the controller, and therefore no error is returned.
+func TestController_GetCar_invalidVin_success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	validFleetID := "jJd9jb8I"
-	invalidVin := "3B7HF13Y81G29358A"
+	invalidVin := "3B7HF13Y81G193#we"
+
+	ctx := context.Background()
+
+	request, _ := http.NewRequestWithContext(ctx, "GET", "https://example.com/getCar", nil)
 
 	mockEchoContext := mocks.NewMockContext(ctrl)
 	mockOperations := mocks.NewMockIOperations(ctrl)
+
+	mockEchoContext.EXPECT().Request().Return(request)
+	mockOperations.EXPECT().GetCar(ctx, validFleetID, invalidVin).Return(&car1, nil)
+	mockEchoContext.EXPECT().JSON(http.StatusOK, &car1)
 
 	controller := NewController(mockOperations)
 
 	err := controller.GetCar(mockEchoContext, validFleetID, invalidVin)
 
-	assert.ErrorIs(t, err, fleetErrors.ErrInvalidVin)
+	assert.Nil(t, err)
 }
 
-func TestController_GetCar_invalidFleetID(t *testing.T) {
+// TestController_GetCar_invalidVin_success tests that the fleet id validity is not checked
+// by the controller, and therefore no error is returned.
+func TestController_GetCar_invalidFleetId_success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	invalidFleetId := "jJd9jb8I3"
-	validVin := "3B7HF13Y81G293584"
+	invalidFleetID := "jJd9I#"
+	validVin := "3B7HF13Y81G193584"
+
+	ctx := context.Background()
+
+	request, _ := http.NewRequestWithContext(ctx, "GET", "https://example.com/getCar", nil)
 
 	mockEchoContext := mocks.NewMockContext(ctrl)
 	mockOperations := mocks.NewMockIOperations(ctrl)
 
+	mockEchoContext.EXPECT().Request().Return(request)
+	mockOperations.EXPECT().GetCar(ctx, invalidFleetID, validVin).Return(&car1, nil)
+	mockEchoContext.EXPECT().JSON(http.StatusOK, &car1)
+
 	controller := NewController(mockOperations)
 
-	err := controller.GetCar(mockEchoContext, invalidFleetId, validVin)
+	err := controller.GetCar(mockEchoContext, invalidFleetID, validVin)
 
-	assert.ErrorIs(t, err, fleetErrors.ErrInvalidFleetId)
+	assert.Nil(t, err)
 }
 
 func TestController_GetCar_operationsError(t *testing.T) {
@@ -220,40 +223,6 @@ func TestController_AddCarToFleet_success(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestController_AddCarToFleet_invalidVIN(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	validFleetID := "jJd9jb8I"
-	invalidVin := "3B7HF13Y81G29358A"
-
-	mockEchoContext := mocks.NewMockContext(ctrl)
-	mockOperations := mocks.NewMockIOperations(ctrl)
-
-	controller := NewController(mockOperations)
-
-	err := controller.AddCarToFleet(mockEchoContext, validFleetID, invalidVin)
-
-	assert.ErrorIs(t, err, fleetErrors.ErrInvalidVin)
-}
-
-func TestController_AddCarToFleet_invalidFleetID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	invalidFleetId := "jJd9jb8I3#"
-	validVin := "3B7HF13Y81G193584"
-
-	mockEchoContext := mocks.NewMockContext(ctrl)
-	mockOperations := mocks.NewMockIOperations(ctrl)
-
-	controller := NewController(mockOperations)
-
-	err := controller.AddCarToFleet(mockEchoContext, invalidFleetId, validVin)
-
-	assert.ErrorIs(t, err, fleetErrors.ErrInvalidFleetId)
-}
-
 func TestController_AddCarToFleet_operationsError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -303,40 +272,6 @@ func TestController_RemoveCar_success(t *testing.T) {
 	err := controller.RemoveCar(mockEchoContext, validFleetID, validVin)
 
 	assert.Nil(t, err)
-}
-
-func TestController_RemoveCar_invalidVIN(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	validFleetID := "jJd9jb8I"
-	invalidVin := "3B7HF13Y81G29358A"
-
-	mockEchoContext := mocks.NewMockContext(ctrl)
-	mockOperations := mocks.NewMockIOperations(ctrl)
-
-	controller := NewController(mockOperations)
-
-	err := controller.RemoveCar(mockEchoContext, validFleetID, invalidVin)
-
-	assert.ErrorIs(t, err, fleetErrors.ErrInvalidVin)
-}
-
-func TestController_RemoveCar_invalidFleetID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	invalidFleetId := "jJd9jb8I3#"
-	validVin := "3B7HF13Y81G293584"
-
-	mockEchoContext := mocks.NewMockContext(ctrl)
-	mockOperations := mocks.NewMockIOperations(ctrl)
-
-	controller := NewController(mockOperations)
-
-	err := controller.RemoveCar(mockEchoContext, invalidFleetId, validVin)
-
-	assert.ErrorIs(t, err, fleetErrors.ErrInvalidFleetId)
 }
 
 func TestController_RemoveCar_operationsError(t *testing.T) {

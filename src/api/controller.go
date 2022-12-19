@@ -2,7 +2,6 @@
 package api
 
 import (
-	"PFleetManagement/logic/fleetErrors"
 	"PFleetManagement/logic/model"
 	"PFleetManagement/logic/operations"
 	"context"
@@ -31,10 +30,6 @@ func extractRequestContext(ctx echo.Context) context.Context {
 }
 
 func (c Controller) GetCarsInFleet(ctx echo.Context, fleetID model.FleetIDParam) error {
-	if !model.IsFleetIDValid(fleetID) {
-		return fleetErrors.ErrInvalidFleetId
-	}
-
 	cars, err := c.operations.GetCarsInFleet(extractRequestContext(ctx), fleetID)
 
 	if err != nil {
@@ -45,13 +40,6 @@ func (c Controller) GetCarsInFleet(ctx echo.Context, fleetID model.FleetIDParam)
 }
 
 func (c Controller) RemoveCar(ctx echo.Context, fleetID model.FleetIDParam, vin model.VinParam) error {
-	if !model.IsFleetIDValid(fleetID) {
-		return fleetErrors.ErrInvalidFleetId
-	}
-	if !model.IsVinValid(vin) {
-		return fleetErrors.ErrInvalidVin
-	}
-
 	err := c.operations.RemoveCar(extractRequestContext(ctx), fleetID, vin)
 
 	if err != nil {
@@ -62,13 +50,6 @@ func (c Controller) RemoveCar(ctx echo.Context, fleetID model.FleetIDParam, vin 
 }
 
 func (c Controller) GetCar(ctx echo.Context, fleetID model.FleetIDParam, vin model.VinParam) error {
-	if !model.IsFleetIDValid(fleetID) {
-		return fleetErrors.ErrInvalidFleetId
-	}
-	if !model.IsVinValid(vin) {
-		return fleetErrors.ErrInvalidVin
-	}
-
 	car, err := c.operations.GetCar(extractRequestContext(ctx), fleetID, vin)
 
 	if err != nil {
@@ -79,13 +60,6 @@ func (c Controller) GetCar(ctx echo.Context, fleetID model.FleetIDParam, vin mod
 }
 
 func (c Controller) AddCarToFleet(ctx echo.Context, fleetID model.FleetIDParam, vin model.VinParam) error {
-	if !model.IsFleetIDValid(fleetID) {
-		return fleetErrors.ErrInvalidFleetId
-	}
-	if !model.IsVinValid(vin) {
-		return fleetErrors.ErrInvalidVin
-	}
-
 	car, err := c.operations.AddCarToFleet(extractRequestContext(ctx), fleetID, vin)
 
 	if err != nil {

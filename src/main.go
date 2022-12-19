@@ -77,6 +77,12 @@ func main() {
 		}))
 	}
 
+	// validate incoming requests against the OpenAPI spec
+	err = api.AddOpenApiValidationMiddleware(e)
+	if err != nil {
+		e.Logger.Fatal(err)
+	}
+
 	fleetDb, err := database.OpenDatabase()
 	if err != nil {
 		e.Logger.Fatal(err)
