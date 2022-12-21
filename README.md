@@ -8,7 +8,7 @@ The provided API endpoints of FleetManagement are specified in the [API specific
 
 ## <span style="color: red">[- CORS WARNING -] </span>
 
-The current version of this microservice allows requests from all origins. This is a security risk and should be changed in production!
+The current HELM deployment of this microservice allows requests from all origins. This is a security risk and should be changed in production!
 Currently, this is needed for the frontend development to be able to access the API.
 
 
