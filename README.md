@@ -4,7 +4,13 @@ FleetManagement provides the functionality for the capability [Management of the
 
 For the implementation of the business logic required for the use cases, FleetManagement orchestrates [Car](https://git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/domain/d-carimpl) to access required data.
 
-The provided API endpoints of FleetManagement are specified in the [API specification](https://git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/application/p-fleetmanagementdesign).
+The provided API endpoints of FleetManagement are specified in the [API specification](https://git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/application/p-fleetmanagementdesign). 
+
+## <span style="color: red">[- CORS WARNING -] </span>
+
+The current HELM deployment of this microservice allows requests from all origins. This is a security risk and should be changed in production!
+Currently, this is needed for the frontend development to be able to access the API.
+
 
 ## Local Setup
 To test FleetManagement locally, you can use the MongoDB Docker Compose setup provided in the `dev` folder.

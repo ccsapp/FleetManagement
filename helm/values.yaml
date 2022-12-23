@@ -6,7 +6,7 @@ base-chart:
 
   extraEnvVars:
     - name: PFL_ALLOW_ORIGINS
-      value: "*.cloud.iai.kit.edu"
+      value: "*"
     - name: PFL_DOMAIN_SERVER
       value: https://cm-d-carimpl.cloud.iai.kit.edu
     - name: PFL_DOMAIN_TIMEOUT
