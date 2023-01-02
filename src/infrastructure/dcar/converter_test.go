@@ -2,41 +2,42 @@ package dcar
 
 import (
 	"PFleetManagement/logic/model"
+	carTypes "git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/domain/d-cargotypes.git"
 	openapiTypes "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
 
-var car1 = Car{
+var car1 = carTypes.Car{
 	Brand: "Tesla",
-	DynamicData: DynamicData{
-		DoorsLockState:      LOCKED,
-		EngineState:         ON,
+	DynamicData: carTypes.DynamicData{
+		DoorsLockState:      carTypes.LOCKED,
+		EngineState:         carTypes.ON,
 		FuelLevelPercentage: 87,
-		Position: DynamicDataPosition{
+		Position: carTypes.DynamicDataPosition{
 			Latitude:  49.0069,
 			Longitude: 8.4037,
 		},
-		TrunkLockState: LOCKED,
+		TrunkLockState: carTypes.LOCKED,
 	},
 	Model: "Model X",
 	ProductionDate: openapiTypes.Date{
 		Time: time.Date(2022, 12, 01, 0, 0, 0, 0, time.UTC),
 	},
-	TechnicalSpecification: TechnicalSpecification{
+	TechnicalSpecification: carTypes.TechnicalSpecification{
 		Color: "red",
-		Consumption: TechnicalSpecificationConsumption{
+		Consumption: carTypes.TechnicalSpecificationConsumption{
 			City:     2.1,
 			Combined: 5.2,
 			Overland: 7.3,
 		},
-		Emissions: TechnicalSpecificationEmissions{
+		Emissions: carTypes.TechnicalSpecificationEmissions{
 			City:     0.2,
 			Combined: 1.2,
 			Overland: 2.4,
 		},
-		Engine: TechnicalSpecificationEngine{
+		Engine: carTypes.TechnicalSpecificationEngine{
 			Power: 10,
 			Type:  "110 CDM",
 		},
@@ -44,7 +45,7 @@ var car1 = Car{
 		FuelCapacity:  "54.0L;85.2kWh",
 		NumberOfDoors: 3,
 		NumberOfSeats: 7,
-		Tire: TechnicalSpecificationTire{
+		Tire: carTypes.TechnicalSpecificationTire{
 			Manufacturer: "GOODYEAR",
 			Type:         "195/65R15",
 		},
@@ -112,13 +113,13 @@ var modelBase1 = model.CarBase{
 }
 
 func TestCar_ToModel(t *testing.T) {
-	modelResult := car1.ToModel()
+	modelResult := ToModelFromCar(&car1)
 
 	assert.Equal(t, modelCar1, modelResult)
 }
 
 func TestCar_ToModelBase(t *testing.T) {
-	modelResult := car1.ToModelBase()
+	modelResult := ToModelBaseFromCar(&car1)
 
 	assert.Equal(t, modelBase1, modelResult)
 }
