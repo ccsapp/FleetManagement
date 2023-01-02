@@ -7,6 +7,7 @@ import (
 	"PFleetManagement/mocks"
 	"context"
 	"errors"
+	carTypes "git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/domain/d-cargotypes.git"
 	openapiTypes "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -24,14 +25,14 @@ var carBase1 = model.CarBase{
 	Vin: "3B7HF13Y81G193584",
 }
 
-var car1 = dcar.Car{
+var car1 = carTypes.Car{
 	Brand:       "Tesla",
-	DynamicData: dcar.DynamicData{},
+	DynamicData: carTypes.DynamicData{},
 	Model:       "Model X",
 	ProductionDate: openapiTypes.Date{
 		Time: time.Date(2022, 12, 01, 0, 0, 0, 0, time.UTC),
 	},
-	TechnicalSpecification: dcar.TechnicalSpecification{},
+	TechnicalSpecification: carTypes.TechnicalSpecification{},
 	Vin:                    "3B7HF13Y81G193584",
 }
 
