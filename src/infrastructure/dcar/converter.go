@@ -2,9 +2,10 @@ package dcar
 
 import (
 	"PFleetManagement/logic/model"
+	carTypes "git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/domain/d-cargotypes.git"
 )
 
-func (t *TechnicalSpecification) toModel() model.TechnicalSpecification {
+func toModelFromTechnicalSpecification(t *carTypes.TechnicalSpecification) model.TechnicalSpecification {
 	return model.TechnicalSpecification{
 		Color: t.Color,
 		Consumption: model.TechnicalSpecificationConsumption{
@@ -35,7 +36,7 @@ func (t *TechnicalSpecification) toModel() model.TechnicalSpecification {
 	}
 }
 
-func (d *DynamicData) toModel() model.DynamicData {
+func toModelFromDynamicData(d *carTypes.DynamicData) model.DynamicData {
 	return model.DynamicData{
 		DoorsLockState:      model.LockState(d.DoorsLockState),
 		EngineState:         model.DynamicDataEngineState(d.EngineState),
@@ -48,20 +49,20 @@ func (d *DynamicData) toModel() model.DynamicData {
 	}
 }
 
-// ToModel deep-copies a dcar.Car to a model.Car
-func (c *Car) ToModel() model.Car {
+// ToModelFromCar deep-copies a carTypes.Car to a model.Car
+func ToModelFromCar(c *carTypes.Car) model.Car {
 	return model.Car{
 		Brand:                  c.Brand,
-		DynamicData:            c.DynamicData.toModel(),
+		DynamicData:            toModelFromDynamicData(&c.DynamicData),
 		Model:                  c.Model,
 		ProductionDate:         c.ProductionDate,
-		TechnicalSpecification: c.TechnicalSpecification.toModel(),
+		TechnicalSpecification: toModelFromTechnicalSpecification(&c.TechnicalSpecification),
 		Vin:                    c.Vin,
 	}
 }
 
-// ToModelBase deep-copies the relevant information from a dcar.Car to a model.CarBase
-func (c *Car) ToModelBase() model.CarBase {
+// ToModelBaseFromCar deep-copies the relevant information from a carTypes.Car to a model.CarBase
+func ToModelBaseFromCar(c *carTypes.Car) model.CarBase {
 	return model.CarBase{
 		Brand:          c.Brand,
 		Model:          c.Model,
@@ -70,53 +71,53 @@ func (c *Car) ToModelBase() model.CarBase {
 	}
 }
 
-func newTechnicalSpecificationFromModel(t *model.TechnicalSpecification) TechnicalSpecification {
-	return TechnicalSpecification{
+func newTechnicalSpecificationFromModel(t *model.TechnicalSpecification) carTypes.TechnicalSpecification {
+	return carTypes.TechnicalSpecification{
 		Color: t.Color,
-		Consumption: TechnicalSpecificationConsumption{
+		Consumption: carTypes.TechnicalSpecificationConsumption{
 			City:     t.Consumption.City,
 			Combined: t.Consumption.Combined,
 			Overland: t.Consumption.Overland,
 		},
-		Emissions: TechnicalSpecificationEmissions{
+		Emissions: carTypes.TechnicalSpecificationEmissions{
 			City:     t.Emissions.City,
 			Combined: t.Emissions.Combined,
 			Overland: t.Emissions.Overland,
 		},
-		Engine: TechnicalSpecificationEngine{
+		Engine: carTypes.TechnicalSpecificationEngine{
 			Power: t.Engine.Power,
 			Type:  t.Engine.Type,
 		},
-		Fuel:          TechnicalSpecificationFuel(t.Fuel),
+		Fuel:          carTypes.TechnicalSpecificationFuel(t.Fuel),
 		FuelCapacity:  t.FuelCapacity,
 		NumberOfDoors: t.NumberOfDoors,
 		NumberOfSeats: t.NumberOfSeats,
-		Tire: TechnicalSpecificationTire{
+		Tire: carTypes.TechnicalSpecificationTire{
 			Manufacturer: t.Tire.Manufacturer,
 			Type:         t.Tire.Type,
 		},
-		Transmission: TechnicalSpecificationTransmission(t.Transmission),
+		Transmission: carTypes.TechnicalSpecificationTransmission(t.Transmission),
 		TrunkVolume:  t.TrunkVolume,
 		Weight:       t.Weight,
 	}
 }
 
-func newDynamicDataFromModel(d *model.DynamicData) DynamicData {
-	return DynamicData{
-		DoorsLockState:      DynamicDataLockState(d.DoorsLockState),
-		EngineState:         DynamicDataEngineState(d.EngineState),
+func newDynamicDataFromModel(d *model.DynamicData) carTypes.DynamicData {
+	return carTypes.DynamicData{
+		DoorsLockState:      carTypes.DynamicDataLockState(d.DoorsLockState),
+		EngineState:         carTypes.DynamicDataEngineState(d.EngineState),
 		FuelLevelPercentage: d.FuelLevelPercentage,
-		Position: DynamicDataPosition{
+		Position: carTypes.DynamicDataPosition{
 			Latitude:  d.Position.Latitude,
 			Longitude: d.Position.Longitude,
 		},
-		TrunkLockState: DynamicDataLockState(d.TrunkLockState),
+		TrunkLockState: carTypes.DynamicDataLockState(d.TrunkLockState),
 	}
 }
 
-// NewCarFromModel deep-copies a model.Car to a dcar.Car
-func NewCarFromModel(c *model.Car) Car {
-	return Car{
+// NewCarFromModel deep-copies a model.Car to a carTypes.Car
+func NewCarFromModel(c *model.Car) carTypes.Car {
+	return carTypes.Car{
 		Brand:                  c.Brand,
 		DynamicData:            newDynamicDataFromModel(&c.DynamicData),
 		Model:                  c.Model,
