@@ -49,7 +49,7 @@ func (o operations) GetCarsInFleet(ctx context.Context, fleetID model.FleetID) (
 		if carResponse.JSON200 != nil {
 			// if the car data could be retrieved -> add the data to the array
 			// remark: index just increases in every loop, so it's writing successive values to the array
-			cars[index] = carResponse.JSON200.ToModelBase()
+			cars[index] = dcar.ToModelBaseFromCar(carResponse.JSON200)
 		} else {
 			// if the retrieval fails for any car, the whole operation fails
 			statusCode := carResponse.StatusCode()
@@ -91,7 +91,7 @@ func (o operations) GetCar(ctx context.Context, fleetID model.FleetID, vin model
 		return nil, err
 	}
 	if response.JSON200 != nil {
-		carData := response.JSON200.ToModel()
+		carData := dcar.ToModelFromCar(response.JSON200)
 		return &carData, nil
 	} else {
 		return nil, fmt.Errorf("%w: error code %d", fleetErrors.ErrDomainAssertion, response.StatusCode())
@@ -123,6 +123,6 @@ func (o operations) AddCarToFleet(ctx context.Context, fleetID model.FleetID, vi
 	}
 
 	// if this line is executed, carResponse.JSON200 is not nil -> return the necessary information
-	baseData := carResponse.JSON200.ToModelBase()
+	baseData := dcar.ToModelBaseFromCar(carResponse.JSON200)
 	return &baseData, nil
 }

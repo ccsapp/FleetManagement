@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"strings"
 
+	carTypes "git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/domain/d-cargotypes.git"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 )
 
@@ -95,13 +96,13 @@ type ClientInterface interface {
 	// AddVehicleWithBody AddVehicle request with any body
 	AddVehicleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	AddVehicle(ctx context.Context, body AddVehicleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	AddVehicle(ctx context.Context, body carTypes.AddCarJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteCar request
-	DeleteCar(ctx context.Context, vin VinParam, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteCar(ctx context.Context, vin carTypes.VinParam, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetCar request
-	GetCar(ctx context.Context, vin VinParam, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetCar(ctx context.Context, vin carTypes.VinParam, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetCars(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -128,7 +129,7 @@ func (c *Client) AddVehicleWithBody(ctx context.Context, contentType string, bod
 	return c.Client.Do(req)
 }
 
-func (c *Client) AddVehicle(ctx context.Context, body AddVehicleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) AddVehicle(ctx context.Context, body carTypes.AddCarJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAddVehicleRequest(c.Server, body)
 	if err != nil {
 		return nil, err
@@ -140,7 +141,7 @@ func (c *Client) AddVehicle(ctx context.Context, body AddVehicleJSONRequestBody,
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteCar(ctx context.Context, vin VinParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) DeleteCar(ctx context.Context, vin carTypes.VinParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteCarRequest(c.Server, vin)
 	if err != nil {
 		return nil, err
@@ -152,7 +153,7 @@ func (c *Client) DeleteCar(ctx context.Context, vin VinParam, reqEditors ...Requ
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetCar(ctx context.Context, vin VinParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetCar(ctx context.Context, vin carTypes.VinParam, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetCarRequest(c.Server, vin)
 	if err != nil {
 		return nil, err
@@ -192,7 +193,7 @@ func NewGetCarsRequest(server string) (*http.Request, error) {
 }
 
 // NewAddVehicleRequest calls the generic AddVehicle builder with application/json body
-func NewAddVehicleRequest(server string, body AddVehicleJSONRequestBody) (*http.Request, error) {
+func NewAddVehicleRequest(server string, body carTypes.AddCarJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -232,7 +233,7 @@ func NewAddVehicleRequestWithBody(server string, contentType string, body io.Rea
 }
 
 // NewDeleteCarRequest generates requests for DeleteCar
-func NewDeleteCarRequest(server string, vin VinParam) (*http.Request, error) {
+func NewDeleteCarRequest(server string, vin carTypes.VinParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -266,7 +267,7 @@ func NewDeleteCarRequest(server string, vin VinParam) (*http.Request, error) {
 }
 
 // NewGetCarRequest generates requests for GetCar
-func NewGetCarRequest(server string, vin VinParam) (*http.Request, error) {
+func NewGetCarRequest(server string, vin carTypes.VinParam) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -348,19 +349,19 @@ type ClientWithResponsesInterface interface {
 	// AddVehicleWithBodyWithResponse AddVehicle request with any body
 	AddVehicleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddVehicleResponse, error)
 
-	AddVehicleWithResponse(ctx context.Context, body AddVehicleJSONRequestBody, reqEditors ...RequestEditorFn) (*AddVehicleResponse, error)
+	AddVehicleWithResponse(ctx context.Context, body carTypes.AddCarJSONRequestBody, reqEditors ...RequestEditorFn) (*AddVehicleResponse, error)
 
 	// DeleteCarWithResponse DeleteCar request
-	DeleteCarWithResponse(ctx context.Context, vin VinParam, reqEditors ...RequestEditorFn) (*DeleteCarResponse, error)
+	DeleteCarWithResponse(ctx context.Context, vin carTypes.VinParam, reqEditors ...RequestEditorFn) (*DeleteCarResponse, error)
 
 	// GetCarWithResponse GetCar request
-	GetCarWithResponse(ctx context.Context, vin VinParam, reqEditors ...RequestEditorFn) (*GetCarResponse, error)
+	GetCarWithResponse(ctx context.Context, vin carTypes.VinParam, reqEditors ...RequestEditorFn) (*GetCarResponse, error)
 }
 
 type GetCarsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]Vin
+	JSON200      *[]carTypes.Vin
 }
 
 // Status returns HTTPResponse.Status
@@ -382,7 +383,7 @@ func (r GetCarsResponse) StatusCode() int {
 type AddVehicleResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *Vin
+	JSON201      *carTypes.Vin
 }
 
 // Status returns HTTPResponse.Status
@@ -425,7 +426,7 @@ func (r DeleteCarResponse) StatusCode() int {
 type GetCarResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Car
+	JSON200      *carTypes.Car
 }
 
 // Status returns HTTPResponse.Status
@@ -462,7 +463,7 @@ func (c *ClientWithResponses) AddVehicleWithBodyWithResponse(ctx context.Context
 	return ParseAddVehicleResponse(rsp)
 }
 
-func (c *ClientWithResponses) AddVehicleWithResponse(ctx context.Context, body AddVehicleJSONRequestBody, reqEditors ...RequestEditorFn) (*AddVehicleResponse, error) {
+func (c *ClientWithResponses) AddVehicleWithResponse(ctx context.Context, body carTypes.AddCarJSONRequestBody, reqEditors ...RequestEditorFn) (*AddVehicleResponse, error) {
 	rsp, err := c.AddVehicle(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -471,7 +472,7 @@ func (c *ClientWithResponses) AddVehicleWithResponse(ctx context.Context, body A
 }
 
 // DeleteCarWithResponse request returning *DeleteCarResponse
-func (c *ClientWithResponses) DeleteCarWithResponse(ctx context.Context, vin VinParam, reqEditors ...RequestEditorFn) (*DeleteCarResponse, error) {
+func (c *ClientWithResponses) DeleteCarWithResponse(ctx context.Context, vin carTypes.VinParam, reqEditors ...RequestEditorFn) (*DeleteCarResponse, error) {
 	rsp, err := c.DeleteCar(ctx, vin, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -480,7 +481,7 @@ func (c *ClientWithResponses) DeleteCarWithResponse(ctx context.Context, vin Vin
 }
 
 // GetCarWithResponse request returning *GetCarResponse
-func (c *ClientWithResponses) GetCarWithResponse(ctx context.Context, vin VinParam, reqEditors ...RequestEditorFn) (*GetCarResponse, error) {
+func (c *ClientWithResponses) GetCarWithResponse(ctx context.Context, vin carTypes.VinParam, reqEditors ...RequestEditorFn) (*GetCarResponse, error) {
 	rsp, err := c.GetCar(ctx, vin, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -503,7 +504,7 @@ func ParseGetCarsResponse(rsp *http.Response) (*GetCarsResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []Vin
+		var dest []carTypes.Vin
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -529,7 +530,7 @@ func ParseAddVehicleResponse(rsp *http.Response) (*AddVehicleResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest Vin
+		var dest carTypes.Vin
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -571,7 +572,7 @@ func ParseGetCarResponse(rsp *http.Response) (*GetCarResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Car
+		var dest carTypes.Car
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
