@@ -25,4 +25,11 @@ type FleetDB interface {
 
 	// IsCarInFleet checks whether the given car (identified by its VIN) is assigned to the given fleet
 	IsCarInFleet(ctx context.Context, fleetId model.FleetID, vin model.Vin) (bool, error)
+
+	// CleanUpDatabase closes the connection to the database.
+	CleanUpDatabase() error
+
+	// DropCollection drops the contents of the database collection.
+	// This is a destructive operation and should only be used for testing.
+	DropCollection(ctx context.Context) error
 }

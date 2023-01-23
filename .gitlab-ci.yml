@@ -22,3 +22,7 @@ golangtest:
   # testing may not fail
   allow_failure: false
 
+  # provide the sequence diagrams as job artifacts
+  artifacts:
+    paths:
+      - src/.sequence/

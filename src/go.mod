@@ -7,7 +7,9 @@ require (
 	github.com/deepmap/oapi-codegen v1.12.4
 	github.com/getkin/kin-openapi v0.107.0
 	github.com/golang/mock v1.6.0
+	github.com/joho/godotenv v1.4.0
 	github.com/labstack/echo/v4 v4.9.1
+	github.com/steinfletcher/apitest v1.5.14
 	github.com/stretchr/testify v1.8.1
 	go.mongodb.org/mongo-driver v1.11.0
 )
