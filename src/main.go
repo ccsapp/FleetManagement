@@ -10,6 +10,7 @@ import (
 	"errors"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -26,6 +27,48 @@ type Config struct {
 	allowOrigins  []string
 	domainServer  string
 	domainTimeout time.Duration
+}
+
+// newApp allows production as well as testing to create a new Echo instance for the API
+func newApp(config *Config, fleetDb database.FleetDB) (*echo.Echo, error) {
+	e := echo.New()
+	e.HTTPErrorHandler = api.FleetErrorHandler
+
+	if len(config.allowOrigins) > 0 {
+		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+			AllowOrigins: config.allowOrigins,
+		}))
+	}
+
+	// validate incoming requests against the OpenAPI spec
+	err := api.AddOpenApiValidationMiddleware(e)
+	if err != nil {
+		return nil, err
+	}
+
+	err = fleetDb.AddFleet(context.TODO(), "xk48jpgz") // TODO manage fleets correctly
+	if err != nil && !errors.Is(err, fleetErrors.ErrFleetAlreadyExists) {
+		return nil, err
+	}
+
+	dcarClient, err := dcar.NewClientWithResponses(config.domainServer, func(c *dcar.Client) error {
+		c.Client = &http.Client{
+			Timeout: config.domainTimeout,
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	operationsInstance := operations.NewOperations(fleetDb, dcarClient)
+	controllerInstance := api.NewController(operationsInstance)
+
+	api.RegisterHandlers(e, controllerInstance)
+
+	return e, nil
 }
 
 func loadConfig() (*Config, error) {
@@ -63,51 +106,28 @@ func loadConfig() (*Config, error) {
 }
 
 func main() {
-	e := echo.New()
-	e.HTTPErrorHandler = api.FleetErrorHandler
-
-	config, err := loadConfig()
+	dbConfig, err := database.LoadConfigFromEnv()
 	if err != nil {
-		e.Logger.Fatal(err)
+		log.Fatal(err)
 	}
 
-	if len(config.allowOrigins) > 0 {
-		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-			AllowOrigins: config.allowOrigins,
-		}))
-	}
-
-	// validate incoming requests against the OpenAPI spec
-	err = api.AddOpenApiValidationMiddleware(e)
+	var fleetDb database.FleetDB
+	fleetDb, err = database.OpenDatabase(dbConfig)
 	if err != nil {
-		e.Logger.Fatal(err)
+		log.Fatal(err)
 	}
 
-	fleetDb, err := database.OpenDatabase()
+	var config *Config
+	config, err = loadConfig()
 	if err != nil {
-		e.Logger.Fatal(err)
-	}
-	err = fleetDb.AddFleet(context.TODO(), "xk48jpgz") // TODO manage fleets correctly
-	if err != nil && !errors.Is(err, fleetErrors.ErrFleetAlreadyExists) {
-		e.Logger.Fatal(err)
+		log.Fatal(err)
 	}
 
-	dcarClient, err := dcar.NewClientWithResponses(config.domainServer, func(c *dcar.Client) error {
-		c.Client = &http.Client{
-			Timeout: config.domainTimeout,
-		}
-
-		return nil
-	})
-
+	var e *echo.Echo
+	e, err = newApp(config, fleetDb)
 	if err != nil {
-		e.Logger.Fatal(err)
+		log.Fatal(err)
 	}
-
-	operationsInstance := operations.NewOperations(fleetDb, dcarClient)
-	controllerInstance := api.NewController(operationsInstance)
-
-	api.RegisterHandlers(e, controllerInstance)
 
 	e.Logger.Fatal(e.Start(":80"))
 }

@@ -7,15 +7,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"os"
 	"time"
 )
 
-const fleetCollectionName = "fleets"
+const fleetCollectionBaseName = "fleets"
 
 type connection struct {
-	database *mongo.Database
-	client   *mongo.Client
+	database   *mongo.Database
+	client     *mongo.Client
+	collection string
 }
 
 type fleet struct {
@@ -23,15 +23,15 @@ type fleet struct {
 	Vins    []model.Vin   `bson:"vins"`
 }
 
-func OpenDatabase() (FleetDB, error) {
+func OpenDatabase(config *Config) (FleetDB, error) {
 	m := connection{}
-	return &m, m.setUpDatabase() // return the error (if) encountered in setup
+	return &m, m.setUpDatabase(config) // return the error (if) encountered in setup
 }
 
-func (m *connection) setUpDatabase() error {
+func (m *connection) setUpDatabase(config *Config) error {
 	// create the client options and construct the MongoDB connection URI from environment variables
 	opts := options.Client()
-	opts.ApplyURI("mongodb://" + os.Getenv("MONGODB_DATABASE_USER") + ":" + os.Getenv("MONGODB_DATABASE_PASSWORD") + "@" + os.Getenv("MONGODB_DATABASE_HOST") + ":" + "27017" + "/" + os.Getenv("MONGODB_DATABASE_NAME"))
+	opts.ApplyURI("mongodb://" + config.User + ":" + config.Password + "@" + config.Host + ":" + "27017" + "/" + config.Db)
 
 	var err error
 
@@ -46,13 +46,20 @@ func (m *connection) setUpDatabase() error {
 	}
 
 	// store an additional pointer to the database of which the name is given by the environment
-	m.database = m.client.Database(os.Getenv("MONGODB_DATABASE_NAME"), options.Database())
+	m.database = m.client.Database(config.Db, options.Database())
+
+	// save the collection name
+	m.collection = config.CollectionPrefix + fleetCollectionBaseName
 	return nil
+}
+
+func (m *connection) CleanUpDatabase() error {
+	return m.client.Disconnect(context.Background())
 }
 
 func (m *connection) AddFleet(ctx context.Context, fleetId model.FleetID) error {
 	// create a new object with the given fleet ID and an empty car/VIN list
-	_, err := m.database.Collection(fleetCollectionName).
+	_, err := m.database.Collection(m.collection).
 		InsertOne(ctx, fleet{FleetId: fleetId, Vins: []model.Vin{}})
 
 	// MongoDB detects duplicate _id (in BSON, field FleetId in struct)
@@ -69,7 +76,7 @@ func (m *connection) AddCarToFleet(ctx context.Context, fleetId model.FleetID, v
 	// the $addToSet operator guarantees that the VIN will not occur multiple times in the resulting array/set
 	update := bson.D{{"$addToSet", bson.D{{"vins", vin}}}}
 	// perform the addition as atomic MongoDB document update (updateOne does not fail, if none found, see below)
-	result, err := m.database.Collection(fleetCollectionName).UpdateOne(ctx, filter, update)
+	result, err := m.database.Collection(m.collection).UpdateOne(ctx, filter, update)
 
 	if err != nil {
 		// return database error
@@ -93,7 +100,7 @@ func (m *connection) GetCarsForFleet(ctx context.Context, fleetId model.FleetID)
 	var fleet fleet
 
 	// create a query with filter by _id (aka FleetId) and decode the document to the struct, fails if fleet not found
-	err := m.database.Collection(fleetCollectionName).
+	err := m.database.Collection(m.collection).
 		FindOne(ctx, bson.D{{"_id", fleetId}}).
 		Decode(&fleet)
 
@@ -136,7 +143,7 @@ func (m *connection) RemoveCarFromFleet(ctx context.Context, fleetId model.Fleet
 		}},
 	}}
 	// perform the atomic update
-	result, err := m.database.Collection(fleetCollectionName).UpdateOne(ctx, filter, update)
+	result, err := m.database.Collection(m.collection).UpdateOne(ctx, filter, update)
 
 	if err != nil {
 		// return database error
@@ -154,4 +161,8 @@ func (m *connection) RemoveCarFromFleet(ctx context.Context, fleetId model.Fleet
 
 	// no error nor invalid post conditions -> success
 	return nil
+}
+
+func (m *connection) DropCollection(ctx context.Context) error {
+	return m.database.Collection(m.collection).Drop(ctx)
 }
