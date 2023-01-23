@@ -6,6 +6,10 @@ For the implementation of the business logic required for the use cases, FleetMa
 Therefore, it depends on the private Git repository [CarGoTypes](https://git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/domain/d-cargotypes) to provide mappings for the JSON responses.
 Further information on the usage of private Git repositories with go can be found there.
 
+## Design 
+
+[Task Processes](pages/task_processes.md) 
+
 The provided API endpoints of FleetManagement are specified in the [API specification](https://git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/application/p-fleetmanagementdesign). 
 
 ## <span style="color: red">[- CORS WARNING -] </span>
