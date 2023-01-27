@@ -54,3 +54,6 @@ The Unit Tests of FleetManagement depend on automatically generated Go mocks.
 You need to install [mockgen](https://github.com/golang/mock#installation) to generate them.
 After the installation, execute `go generate ./...` in the `src` directory of this project.
 The provided API endpoints of FleetManagement are specified in the [API specification](https://git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/application/p-fleetmanagementdesign). 
+
+The test setup loads environment variables from `src/testdata/testdb.env` and ignores the system environment variables.
+Also, it overrides `FLEET_MANAGEMENT_COLLECTION_PREFIX` with a dynamically generated prefix to avoid conflicts with other tests.
