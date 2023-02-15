@@ -3,6 +3,7 @@ package main
 import (
 	"PFleetManagement/infrastructure/database"
 	"PFleetManagement/testdata"
+	"PFleetManagement/testhelpers"
 	"context"
 	"fmt"
 	"github.com/labstack/echo/v4"
@@ -15,9 +16,10 @@ import (
 
 type ApiTestSuite struct {
 	suite.Suite
-	fleetDB database.FleetDB
-	app     *echo.Echo
-	config  *Config
+	fleetDB            database.FleetDB
+	app                *echo.Echo
+	config             *Config
+	recordingFormatter *testhelpers.RecordingFormatter
 }
 
 func (suite *ApiTestSuite) SetupSuite() {
@@ -33,6 +35,9 @@ func (suite *ApiTestSuite) SetupSuite() {
 	dbConfig.CollectionPrefix = fmt.Sprintf("test-%d-", time.Now().Unix())
 
 	suite.fleetDB, err = database.OpenDatabase(dbConfig)
+	if err != nil {
+		suite.T().Fatal(err.Error())
+	}
 
 	suite.app, err = newApp(suite.config, suite.fleetDB)
 	if err != nil {
@@ -40,7 +45,29 @@ func (suite *ApiTestSuite) SetupSuite() {
 	}
 
 	// we need to initially clear the database since by default, an empty fleet is inserted into the database
-	suite.TearDownTest()
+	suite.clearCollection()
+}
+
+func (suite *ApiTestSuite) clearCollection() {
+	if err := suite.fleetDB.DropCollection(context.Background()); err != nil {
+		suite.T().Fatal(err)
+	}
+}
+
+func (suite *ApiTestSuite) SetupTest() {
+	suite.recordingFormatter = testhelpers.NewRecordingFormatter()
+}
+
+func (suite *ApiTestSuite) TearDownTest() {
+	// generate the sequence diagram for the test
+	suite.recordingFormatter.SetOutFileName(suite.T().Name())
+	suite.recordingFormatter.SetTitle(suite.T().Name())
+
+	diagramFormatter := apitest.SequenceDiagram()
+	diagramFormatter.Format(suite.recordingFormatter.GetRecorder())
+
+	// clear the collection after each test
+	suite.clearCollection()
 }
 
 func (suite *ApiTestSuite) TearDownSuite() {
@@ -50,33 +77,30 @@ func (suite *ApiTestSuite) TearDownSuite() {
 	}
 }
 
-func (suite *ApiTestSuite) TearDownTest() {
-	// clear the collection after each test
-	if err := suite.fleetDB.DropCollection(context.Background()); err != nil {
-		suite.T().Fatal(err)
-	}
-}
-
 func TestApiTestSuite(t *testing.T) {
 	suite.Run(t, new(ApiTestSuite))
 }
 
-func newApiTest(handler http.Handler, name string) *apitest.APITest {
-	return apitest.New(name).
+func (suite *ApiTestSuite) newApiTest() *apitest.APITest {
+	return apitest.New().
 		Debug().
-		Handler(handler).
-		Report(apitest.SequenceDiagram())
+		Handler(suite.app).
+		Report(suite.recordingFormatter)
 }
 
-func newApiTestWithMocks(handler http.Handler, name string, mocks []*apitest.Mock) *apitest.APITest {
-	return apitest.New(name).
+func (suite *ApiTestSuite) newApiTestWithMocks(mocks []*apitest.Mock) *apitest.APITest {
+	return apitest.New().
 		Mocks(mocks...).
 		Debug().
-		Handler(handler).
-		Report(apitest.SequenceDiagram())
+		Handler(suite.app).
+		Report(suite.recordingFormatter)
 }
 
-func newCarMock(suite *ApiTestSuite) []*apitest.Mock {
+func (suite *ApiTestSuite) newApiTestWithCarMock() *apitest.APITest {
+	return suite.newApiTestWithMocks(suite.newCarMock())
+}
+
+func (suite *ApiTestSuite) newCarMock() []*apitest.Mock {
 	return []*apitest.Mock{
 		apitest.NewMock().
 			Get(suite.config.domainServer + "/cars/" + testdata.VinCar).
@@ -91,7 +115,7 @@ func newCarMock(suite *ApiTestSuite) []*apitest.Mock {
 }
 
 func (suite *ApiTestSuite) TestGetCars_invalidFleetId() {
-	newApiTest(suite.app, "Get cars of a fleet with invalid id").
+	suite.newApiTest().
 		Get("/fleets/abc/cars").
 		Expect(suite.T()).
 		Status(http.StatusBadRequest).
@@ -99,7 +123,7 @@ func (suite *ApiTestSuite) TestGetCars_invalidFleetId() {
 }
 
 func (suite *ApiTestSuite) TestGetCars_unknownFleet() {
-	newApiTest(suite.app, "Get cars of a fleet unknown to the system").
+	suite.newApiTest().
 		Get("/fleets/xk48jpgz/cars").
 		Expect(suite.T()).
 		Status(http.StatusNotFound).
@@ -110,7 +134,7 @@ func (suite *ApiTestSuite) TestGetCars_successEmpty() {
 	if err := suite.fleetDB.AddFleet(context.Background(), testdata.FleetId); err != nil {
 		suite.T().Fatal(err)
 	}
-	newApiTest(suite.app, "Get cars with no cars in the fleet").
+	suite.newApiTest().
 		Get("/fleets/" + testdata.FleetId + "/cars").
 		Expect(suite.T()).
 		Status(http.StatusOK).
@@ -122,19 +146,19 @@ func (suite *ApiTestSuite) TestGetCars_success() {
 	if err := suite.fleetDB.AddFleet(context.Background(), testdata.FleetId); err != nil {
 		suite.T().Fatal(err)
 	}
-	newApiTestWithMocks(suite.app, "Add car success", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Put("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusOK).
 		Body(testdata.ExampleCarResponse).
 		End()
-	newApiTestWithMocks(suite.app, "Add car success", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Put("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar2).
 		Expect(suite.T()).
 		Status(http.StatusOK).
 		Body(testdata.ExampleCar2Response).
 		End()
-	newApiTestWithMocks(suite.app, "Get cars success", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Get("/fleets/" + testdata.FleetId + "/cars").
 		Expect(suite.T()).
 		Status(http.StatusOK).
@@ -143,7 +167,7 @@ func (suite *ApiTestSuite) TestGetCars_success() {
 }
 
 func (suite *ApiTestSuite) TestGetCar_invalidFleetId() {
-	newApiTest(suite.app, "Get car of a fleet with invalid id").
+	suite.newApiTest().
 		Get("/fleets/abc/cars/G1YZ23J9P58034278").
 		Expect(suite.T()).
 		Status(http.StatusBadRequest).
@@ -151,7 +175,7 @@ func (suite *ApiTestSuite) TestGetCar_invalidFleetId() {
 }
 
 func (suite *ApiTestSuite) TestGetCar_invalidVin() {
-	newApiTest(suite.app, "Get car with invalid vin").
+	suite.newApiTest().
 		Get("/fleets/xk48jpgz/cars/G1YZ23J9P5803427").
 		Expect(suite.T()).
 		Status(http.StatusBadRequest).
@@ -159,7 +183,7 @@ func (suite *ApiTestSuite) TestGetCar_invalidVin() {
 }
 
 func (suite *ApiTestSuite) TestGetCar_unknownFleet() {
-	newApiTest(suite.app, "Get car of a fleet unknown to the system").
+	suite.newApiTest().
 		Get("/fleets/xk48jpgz/cars/G1YZ23J9P58034278").
 		Expect(suite.T()).
 		Status(http.StatusNotFound).
@@ -170,7 +194,7 @@ func (suite *ApiTestSuite) TestGetCar_unknownCar() {
 	if err := suite.fleetDB.AddFleet(context.Background(), testdata.FleetId); err != nil {
 		suite.T().Fatal(err)
 	}
-	newApiTest(suite.app, "Get car unknown to the system").
+	suite.newApiTest().
 		Get("/fleets/" + testdata.FleetId + "/cars/" + testdata.UnknownVin).
 		Expect(suite.T()).
 		Status(http.StatusNotFound).
@@ -184,13 +208,13 @@ func (suite *ApiTestSuite) TestGetCar_CarInOtherFleet() {
 	if err := suite.fleetDB.AddFleet(context.Background(), testdata.FleetId2); err != nil {
 		suite.T().Fatal(err)
 	}
-	newApiTestWithMocks(suite.app, "Add car success", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Put("/fleets/" + testdata.FleetId2 + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusOK).
 		Body(testdata.ExampleCarResponse).
 		End()
-	newApiTest(suite.app, "Get car in different fleet").
+	suite.newApiTest().
 		Get("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusNotFound).
@@ -201,13 +225,13 @@ func (suite *ApiTestSuite) TestGetCar_success() {
 	if err := suite.fleetDB.AddFleet(context.Background(), testdata.FleetId); err != nil {
 		suite.T().Fatal(err)
 	}
-	newApiTestWithMocks(suite.app, "Add car success", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Put("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusOK).
 		Body(testdata.ExampleCarResponse).
 		End()
-	newApiTestWithMocks(suite.app, "Get car success", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Get("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusOK).
@@ -216,7 +240,7 @@ func (suite *ApiTestSuite) TestGetCar_success() {
 }
 
 func (suite *ApiTestSuite) TestAddCar_invalidFleetId() {
-	newApiTest(suite.app, "Add car to a fleet with invalid id").
+	suite.newApiTest().
 		Put("/fleets/abc/cars/G1YZ23J9P58034278").
 		Expect(suite.T()).
 		Status(http.StatusBadRequest).
@@ -224,7 +248,7 @@ func (suite *ApiTestSuite) TestAddCar_invalidFleetId() {
 }
 
 func (suite *ApiTestSuite) TestAddCar_invalidVin() {
-	newApiTest(suite.app, "Add car with invalid vin").
+	suite.newApiTest().
 		Put("/fleets/" + testdata.FleetId + "/cars/G1YZ23J9P5803427").
 		Expect(suite.T()).
 		Status(http.StatusBadRequest).
@@ -232,7 +256,7 @@ func (suite *ApiTestSuite) TestAddCar_invalidVin() {
 }
 
 func (suite *ApiTestSuite) TestAddCar_unknownFleet() {
-	newApiTestWithMocks(suite.app, "Add car to a fleet unknown to the system", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Put("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusNotFound).
@@ -243,7 +267,7 @@ func (suite *ApiTestSuite) TestAddCar_unknownCar() {
 	if err := suite.fleetDB.AddFleet(context.Background(), testdata.FleetId); err != nil {
 		suite.T().Fatal(err)
 	}
-	newApiTestWithMocks(suite.app, "Add car unknown to the system", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Put("/fleets/" + testdata.FleetId + "/cars/" + testdata.UnknownVin).
 		Expect(suite.T()).
 		Status(http.StatusNotFound).
@@ -254,13 +278,13 @@ func (suite *ApiTestSuite) TestAddCar_duplicate() {
 	if err := suite.fleetDB.AddFleet(context.Background(), testdata.FleetId); err != nil {
 		suite.T().Fatal(err)
 	}
-	newApiTestWithMocks(suite.app, "Add car success", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Put("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusOK).
 		Body(testdata.ExampleCarResponse).
 		End()
-	newApiTestWithMocks(suite.app, "Add car already in fleet", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Put("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusNoContent).
@@ -271,7 +295,7 @@ func (suite *ApiTestSuite) TestAddCar_success() {
 	if err := suite.fleetDB.AddFleet(context.Background(), testdata.FleetId); err != nil {
 		suite.T().Fatal(err)
 	}
-	newApiTestWithMocks(suite.app, "Add car success", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Put("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusOK).
@@ -286,13 +310,13 @@ func (suite *ApiTestSuite) TestAddCar_successMultipleFleets() {
 	if err := suite.fleetDB.AddFleet(context.Background(), testdata.FleetId2); err != nil {
 		suite.T().Fatal(err)
 	}
-	newApiTestWithMocks(suite.app, "Add car success", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Put("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusOK).
 		Body(testdata.ExampleCarResponse).
 		End()
-	newApiTestWithMocks(suite.app, "Add car success", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Put("/fleets/" + testdata.FleetId2 + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusOK).
@@ -301,7 +325,7 @@ func (suite *ApiTestSuite) TestAddCar_successMultipleFleets() {
 }
 
 func (suite *ApiTestSuite) TestRemoveCar_invalidFleetId() {
-	newApiTest(suite.app, "Remove car from a fleet with invalid id").
+	suite.newApiTest().
 		Delete("/fleets/abc/cars/G1YZ23J9P58034278").
 		Expect(suite.T()).
 		Status(http.StatusBadRequest).
@@ -309,7 +333,7 @@ func (suite *ApiTestSuite) TestRemoveCar_invalidFleetId() {
 }
 
 func (suite *ApiTestSuite) TestRemoveCar_invalidVin() {
-	newApiTest(suite.app, "Remove car with invalid vin").
+	suite.newApiTest().
 		Delete("/fleets/" + testdata.FleetId + "/cars/G1YZ23J9P5803427").
 		Expect(suite.T()).
 		Status(http.StatusBadRequest).
@@ -317,7 +341,7 @@ func (suite *ApiTestSuite) TestRemoveCar_invalidVin() {
 }
 
 func (suite *ApiTestSuite) TestRemoveCar_unknownFleet() {
-	newApiTest(suite.app, "Remove car from a fleet unknown to the system").
+	suite.newApiTest().
 		Delete("/fleets/" + testdata.FleetId + "/cars/G1YZ23J9P58034278").
 		Expect(suite.T()).
 		Status(http.StatusNotFound).
@@ -328,7 +352,7 @@ func (suite *ApiTestSuite) TestRemoveCar_unknownCar() {
 	if err := suite.fleetDB.AddFleet(context.Background(), testdata.FleetId); err != nil {
 		suite.T().Fatal(err)
 	}
-	newApiTest(suite.app, "Remove car unknown to the system").
+	suite.newApiTest().
 		Delete("/fleets/" + testdata.FleetId + "/cars/" + testdata.UnknownVin).
 		Expect(suite.T()).
 		Status(http.StatusNotFound).
@@ -342,13 +366,13 @@ func (suite *ApiTestSuite) TestRemoveCar_CarInOtherFleet() {
 	if err := suite.fleetDB.AddFleet(context.Background(), testdata.FleetId2); err != nil {
 		suite.T().Fatal(err)
 	}
-	newApiTestWithMocks(suite.app, "Add car success", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Put("/fleets/" + testdata.FleetId2 + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusOK).
 		Body(testdata.ExampleCarResponse).
 		End()
-	newApiTest(suite.app, "Remove car in other fleet").
+	suite.newApiTest().
 		Delete("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusNotFound).
@@ -359,13 +383,13 @@ func (suite *ApiTestSuite) TestRemoveCar_success() {
 	if err := suite.fleetDB.AddFleet(context.Background(), testdata.FleetId); err != nil {
 		suite.T().Fatal(err)
 	}
-	newApiTestWithMocks(suite.app, "Add car success", newCarMock(suite)).
+	suite.newApiTestWithCarMock().
 		Put("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusOK).
 		Body(testdata.ExampleCarResponse).
 		End()
-	newApiTest(suite.app, "Remove car success").
+	suite.newApiTest().
 		Delete("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusNoContent).
