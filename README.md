@@ -44,8 +44,11 @@ try to use the same collection. This is particularly useful for testing as all t
 
 ## General Setup
 You also need to set the environment variable `PFL_DOMAIN_SERVER` to the URL of the Car server.
+Similarly, you need to set the environment variable `PFL_RENTAL_MANAGEMENT_SERVER` to the URL of the RentalManagement 
+server. 
 `PFL_ALLOW_ORIGINS` may contain a comma-separated list of allowed origins for CORS requests.
 Optionally, you can set a timeout for requests to the Car server with `PFL_DOMAIN_TIMEOUT`
+and to the RentalManagement server with `PFL_RENTAL_MANAGEMENT_TIMEOUT`.
 ([number with suffix](https://pkg.go.dev/time#ParseDuration)
 "ms" for milliseconds, "s" for seconds, "m" for minutes, "h" for hours)
 

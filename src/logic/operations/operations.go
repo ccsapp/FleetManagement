@@ -3,6 +3,7 @@ package operations
 import (
 	"PFleetManagement/infrastructure/database"
 	"PFleetManagement/infrastructure/dcar"
+	rentalManagement "PFleetManagement/infrastructure/rentalmanagement"
 	"PFleetManagement/logic/fleetErrors"
 	"PFleetManagement/logic/model"
 	"context"
@@ -11,8 +12,9 @@ import (
 )
 
 type operations struct {
-	database database.FleetDB
-	dcar     dcar.ClientWithResponsesInterface
+	database               database.FleetDB
+	carClient              dcar.ClientWithResponsesInterface
+	rentalManagementClient rentalManagement.ClientWithResponsesInterface
 }
 
 // NewOperations creates an implementation of IOperations from its dependencies.
@@ -20,10 +22,13 @@ type operations struct {
 // The database.FleetDB is queried for/updated with the fleet-car assignment.
 //
 // The dcar.ClientWithResponsesInterface is queried for resolving VINs to full car data.
-func NewOperations(fleetDB database.FleetDB, dcarClient dcar.ClientWithResponsesInterface) IOperations {
+func NewOperations(fleetDB database.FleetDB, carClient dcar.ClientWithResponsesInterface,
+	rentalManagementClient rentalManagement.ClientWithResponsesInterface) IOperations {
+
 	return operations{
-		database: fleetDB,
-		dcar:     dcarClient,
+		database:               fleetDB,
+		carClient:              carClient,
+		rentalManagementClient: rentalManagementClient,
 	}
 }
 
@@ -41,26 +46,25 @@ func (o operations) GetCarsInFleet(ctx context.Context, fleetID model.FleetID) (
 
 	// iterate over the VINs and query for the cars respectively
 	for index, vin := range vins {
-		carResponse, err := o.dcar.GetCarWithResponse(ctx, vin)
+		carResponse, err := o.carClient.GetCarWithResponse(ctx, vin)
 		if err != nil {
 			return nil, err
 		}
 
-		if carResponse.JSON200 != nil {
-			// if the car data could be retrieved -> add the data to the array
-			// remark: index just increases in every loop, so it's writing successive values to the array
-			cars[index] = dcar.ToModelBaseFromCar(carResponse.JSON200)
-		} else {
+		if carResponse.JSON200 == nil {
 			// if the retrieval fails for any car, the whole operation fails
 			statusCode := carResponse.StatusCode()
 			if statusCode == http.StatusNotFound {
 				// (car was deleted since it was added to the fleet -> fleet database references unknown data)
 				// this error by the domain is known but results from an inconsistency
 				return nil, fmt.Errorf("%w: car %s from fleet %s not in domain", fleetErrors.ErrDomainAssertion, vin, fleetID)
-			} else {
-				return nil, fmt.Errorf("%w: unknown error (domain code %d)", fleetErrors.ErrDomainAssertion, statusCode)
 			}
+			return nil, fmt.Errorf("%w: unknown error (domain code %d)", fleetErrors.ErrDomainAssertion, statusCode)
 		}
+
+		// if the car data could be retrieved -> add the data to the array
+		// remark: index just increases in every loop, so it's writing successive values to the array
+		cars[index] = dcar.ToModelBaseFromCar(carResponse.JSON200)
 	}
 
 	return cars, nil
@@ -86,22 +90,33 @@ func (o operations) GetCar(ctx context.Context, fleetID model.FleetID, vin model
 
 	// --- Car service interaction ---
 	// get the car data itself
-	response, err := o.dcar.GetCarWithResponse(ctx, vin)
+	response, err := o.carClient.GetCarWithResponse(ctx, vin)
 	if err != nil {
 		return nil, err
 	}
-	if response.JSON200 != nil {
-		carData := dcar.ToModelFromCar(response.JSON200)
-		return &carData, nil
-	} else {
-		return nil, fmt.Errorf("%w: error code %d", fleetErrors.ErrDomainAssertion, response.StatusCode())
+	if response.JSON200 == nil {
+		return nil, fmt.Errorf("%w: status code %d", fleetErrors.ErrDomainAssertion, response.StatusCode())
 	}
+
+	// --- Rental management service interaction ---
+	// get the rental data for the car
+	rentalResponse, err := o.rentalManagementClient.GetNextRentalWithResponse(ctx, vin)
+	if err != nil {
+		return nil, err
+	}
+	if rentalResponse.JSON200 == nil && rentalResponse.StatusCode() != http.StatusNoContent {
+		return nil, fmt.Errorf("%w: error code %d", fleetErrors.ErrRentalManagementAssertion, rentalResponse.StatusCode())
+	}
+
+	carData := dcar.ToModelFromCar(response.JSON200)
+	carData.Rental = rentalResponse.JSON200
+	return &carData, nil
 }
 
 func (o operations) AddCarToFleet(ctx context.Context, fleetID model.FleetID, vin model.Vin) (*model.CarBase, error) {
 	// --- Car service interaction ---
 	// check for the car first to prevent VINs which no cars are known for to be stored in the database
-	carResponse, err := o.dcar.GetCarWithResponse(ctx, vin)
+	carResponse, err := o.carClient.GetCarWithResponse(ctx, vin)
 	if err != nil {
 		return nil, err
 	}
