@@ -1,7 +1,7 @@
 // Package dcar provides primitives to interact with the HTTP API of the "Car" service.
 package dcar
 
-//go:generate mockgen -source=client.go -package=mocks -destination=../../mocks/client_mock.go
+//go:generate mockgen -source=client.go -package=carmocks -destination=../../mocks/carmocks/client_mock.go
 
 import (
 	"bytes"

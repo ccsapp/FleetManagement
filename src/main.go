@@ -4,6 +4,7 @@ import (
 	"PFleetManagement/api"
 	"PFleetManagement/infrastructure/database"
 	"PFleetManagement/infrastructure/dcar"
+	rentalManagement "PFleetManagement/infrastructure/rentalmanagement"
 	"PFleetManagement/logic/fleetErrors"
 	"PFleetManagement/logic/operations"
 	"context"
@@ -18,15 +19,19 @@ import (
 )
 
 const (
-	EnvAllowOrigins  = "PFL_ALLOW_ORIGINS"
-	EnvDomainServer  = "PFL_DOMAIN_SERVER"
-	EnvDomainTimeout = "PFL_DOMAIN_TIMEOUT"
+	EnvAllowOrigins            = "PFL_ALLOW_ORIGINS"
+	EnvDomainServer            = "PFL_DOMAIN_SERVER"
+	EnvDomainTimeout           = "PFL_DOMAIN_TIMEOUT"
+	EnvRentalManagementServer  = "PFL_RENTAL_MANAGEMENT_SERVER"
+	EnvRentalManagementTimeout = "PFL_RENTAL_MANAGEMENT_TIMEOUT"
 )
 
 type Config struct {
-	allowOrigins  []string
-	domainServer  string
-	domainTimeout time.Duration
+	allowOrigins            []string
+	domainServer            string
+	domainTimeout           time.Duration
+	rentalManagementServer  string
+	rentalManagementTimeout time.Duration
 }
 
 // newApp allows production as well as testing to create a new Echo instance for the API
@@ -51,24 +56,39 @@ func newApp(config *Config, fleetDb database.FleetDB) (*echo.Echo, error) {
 		return nil, err
 	}
 
-	dcarClient, err := dcar.NewClientWithResponses(config.domainServer, func(c *dcar.Client) error {
-		c.Client = &http.Client{
-			Timeout: config.domainTimeout,
-		}
+	dcarClient, err := dcar.NewClientWithResponses(
+		config.domainServer,
+		dcar.WithHTTPClient(&http.Client{Timeout: config.domainTimeout}),
+	)
 
-		return nil
-	})
+	rmClient, err := rentalManagement.NewClientWithResponses(
+		config.rentalManagementServer,
+		rentalManagement.WithHTTPClient(&http.Client{Timeout: config.rentalManagementTimeout}),
+	)
 
 	if err != nil {
 		return nil, err
 	}
 
-	operationsInstance := operations.NewOperations(fleetDb, dcarClient)
+	operationsInstance := operations.NewOperations(fleetDb, dcarClient, rmClient)
 	controllerInstance := api.NewController(operationsInstance)
 
 	api.RegisterHandlers(e, controllerInstance)
 
 	return e, nil
+}
+
+func parseTimeout(timeoutString string) (time.Duration, error) {
+	var timeout time.Duration
+	if timeoutString != "" {
+		var err error // declaring with := below would create separate timeout var in this scope
+		timeout, err = time.ParseDuration(timeoutString)
+		if err != nil {
+			return 0, errors.New("invalid timeout configured")
+		}
+		return timeout, nil
+	}
+	return 5 * time.Second, nil
 }
 
 func loadConfig() (*Config, error) {
@@ -85,23 +105,29 @@ func loadConfig() (*Config, error) {
 		return nil, errors.New("no domain server given")
 	}
 
-	timeoutString := os.Getenv(EnvDomainTimeout)
-	var domainTimeout time.Duration
+	rmServer := os.Getenv(EnvRentalManagementServer)
+	if rmServer == "" {
+		return nil, errors.New("no rental management server given")
+	}
 
-	if timeoutString != "" {
-		var err error // declaring with := below would create separate domainTimeout var in this scope
-		domainTimeout, err = time.ParseDuration(timeoutString)
-		if err != nil {
-			return nil, errors.New("invalid domain timeout configured")
-		}
-	} else {
-		domainTimeout = 5 * time.Second
+	timeoutString := os.Getenv(EnvDomainTimeout)
+	domainTimeout, err := parseTimeout(timeoutString)
+	if err != nil {
+		return nil, err
+	}
+
+	timeoutString = os.Getenv(EnvRentalManagementTimeout)
+	rmTimeout, err := parseTimeout(timeoutString)
+	if err != nil {
+		return nil, err
 	}
 
 	return &Config{
 		allowOrigins,
 		domainServer,
 		domainTimeout,
+		rmServer,
+		rmTimeout,
 	}, nil
 }
 
