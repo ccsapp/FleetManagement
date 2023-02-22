@@ -20,7 +20,13 @@ var ExampleCar2Response string
 //go:embed exampleCar2.json
 var ExampleCar2 string
 
+//go:embed exampleCar2WithRental.json
+var ExampleCar2WithRental string
+
 const VinCar2 string = "WVWAA71K08W201031"
 
 //go:embed exampleFleetOverview.json
 var ExampleFleetOverview string
+
+//go:embed exampleRental.json
+var ExampleRental string

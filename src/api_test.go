@@ -29,7 +29,13 @@ func (suite *ApiTestSuite) SetupSuite() {
 		suite.T().Fatal(err.Error())
 	}
 
-	suite.config = &Config{allowOrigins: []string{"*"}, domainServer: "https://carservice.kit.edu", domainTimeout: 1}
+	suite.config = &Config{
+		allowOrigins:            []string{"*"},
+		domainServer:            "https://carservice.kit.edu",
+		domainTimeout:           1,
+		rentalManagementServer:  "https://rentalmanagement.kit.edu",
+		rentalManagementTimeout: 1,
+	}
 
 	// generate a collection name so that concurrent executions do not interfere
 	dbConfig.CollectionPrefix = fmt.Sprintf("test-%d-", time.Now().Unix())
@@ -100,6 +106,10 @@ func (suite *ApiTestSuite) newApiTestWithCarMock() *apitest.APITest {
 	return suite.newApiTestWithMocks(suite.newCarMock())
 }
 
+func (suite *ApiTestSuite) newApiTestWithCarAndRentalMocks() *apitest.APITest {
+	return suite.newApiTestWithMocks(append(suite.newCarMock(), suite.newRentalMock()...))
+}
+
 func (suite *ApiTestSuite) newCarMock() []*apitest.Mock {
 	return []*apitest.Mock{
 		apitest.NewMock().
@@ -111,6 +121,17 @@ func (suite *ApiTestSuite) newCarMock() []*apitest.Mock {
 		apitest.NewMock().
 			Get(suite.config.domainServer + "/cars/" + testdata.UnknownVin).
 			RespondWith().Status(http.StatusNotFound).End(),
+	}
+}
+
+func (suite *ApiTestSuite) newRentalMock() []*apitest.Mock {
+	return []*apitest.Mock{
+		apitest.NewMock().
+			Get(suite.config.rentalManagementServer + "/cars/" + testdata.VinCar + "/rentalStatus").
+			RespondWith().Status(http.StatusNoContent).End(),
+		apitest.NewMock().
+			Get(suite.config.rentalManagementServer + "/cars/" + testdata.VinCar2 + "/rentalStatus").
+			RespondWith().Status(http.StatusOK).Body(testdata.ExampleRental).End(),
 	}
 }
 
@@ -221,7 +242,7 @@ func (suite *ApiTestSuite) TestGetCar_CarInOtherFleet() {
 		End()
 }
 
-func (suite *ApiTestSuite) TestGetCar_success() {
+func (suite *ApiTestSuite) TestGetCar_success_noRental() {
 	if err := suite.fleetDB.AddFleet(context.Background(), testdata.FleetId); err != nil {
 		suite.T().Fatal(err)
 	}
@@ -231,11 +252,29 @@ func (suite *ApiTestSuite) TestGetCar_success() {
 		Status(http.StatusOK).
 		Body(testdata.ExampleCarResponse).
 		End()
-	suite.newApiTestWithCarMock().
+	suite.newApiTestWithCarAndRentalMocks().
 		Get("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar).
 		Expect(suite.T()).
 		Status(http.StatusOK).
 		Body(testdata.ExampleCar).
+		End()
+}
+
+func (suite *ApiTestSuite) TestGetCar_success_rental() {
+	if err := suite.fleetDB.AddFleet(context.Background(), testdata.FleetId); err != nil {
+		suite.T().Fatal(err)
+	}
+	suite.newApiTestWithCarMock().
+		Put("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar2).
+		Expect(suite.T()).
+		Status(http.StatusOK).
+		Body(testdata.ExampleCar2Response).
+		End()
+	suite.newApiTestWithCarAndRentalMocks().
+		Get("/fleets/" + testdata.FleetId + "/cars/" + testdata.VinCar2).
+		Expect(suite.T()).
+		Status(http.StatusOK).
+		Body(testdata.ExampleCar2WithRental).
 		End()
 }
 
