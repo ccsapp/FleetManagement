@@ -3,6 +3,7 @@ package model
 
 import (
 	openapiTypes "github.com/deepmap/oapi-codegen/pkg/types"
+	"time"
 )
 
 // Defines values for DynamicDataEngineState.
@@ -49,6 +50,9 @@ type Car struct {
 
 	// Vin A Vehicle Identification Number (VIN) which uniquely identifies a Vehicle
 	Vin Vin `json:"vin"`
+
+	// Rental Data that specifies the active or next upcoming rental of a car
+	Rental *Rental `json:"rental,omitempty"`
 }
 
 // CarBase Overview of a car
@@ -190,3 +194,39 @@ type FleetIDParam = FleetID
 
 // VinParam A Vehicle Identification Number (VIN) which uniquely identifies a Vehicle
 type VinParam = Vin
+
+// Rental defines a model for rentals.
+type Rental struct {
+	// Active Describes whether this rental is active
+	Active bool `json:"active"`
+
+	// Id Unique identification of a rental
+	Id RentalId `json:"id"`
+
+	// Customer The renting customer
+	Customer Customer `json:"customer"`
+
+	// RentalPeriod A period of time
+	RentalPeriod TimePeriod `json:"rentalPeriod"`
+}
+
+// TimePeriod A period of time
+type TimePeriod struct {
+	// StartDate start of the time period
+	StartDate time.Time `json:"startDate"`
+
+	// EndDate end of the time period
+	EndDate time.Time `json:"endDate"`
+}
+
+// RentalId Unique identification of a rental
+type RentalId = string
+
+// Customer A customer
+type Customer struct {
+	// CustomerId Unique identification of a customer
+	CustomerId CustomerId `json:"customerId"`
+}
+
+// CustomerId Unique identification of a customer
+type CustomerId = string
