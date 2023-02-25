@@ -11,6 +11,10 @@ base-chart:
       value: https://cm-d-carimpl.cloud.iai.kit.edu
     - name: PFL_DOMAIN_TIMEOUT
       value: 5s
+    - name: PFL_RENTAL_MANAGEMENT_SERVER
+      value: cm-rentalmgmt.cloud.iai.kit.edu
+    - name: PFL_RENTAL_MANAGEMENT_TIMEOUT
+      value: 5s
     # How-To: Remove to square brakets array placeholder in the line above if you wanna define additional environment variables
     # Example for adding a defined value to a Pod/Container
     # - name: PACT_BROKER_PORT
