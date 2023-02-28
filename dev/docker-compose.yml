@@ -1,4 +1,6 @@
-version: '3.1'
+version: '3.8'
+
+name: ccsappvp2-fleet-dev
 
 # Deploy this stack to test the database for development
 # We recommend to use MongoDB Compass for local database access
@@ -7,7 +9,8 @@ services:
     image: mongo:6
     restart: 'no'
     ports:
-      - "27017:27017"
+      # expose port 27031 (reserved for the FleetManagement microservice database) for local access
+      - "27031:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
