@@ -4,6 +4,7 @@ import (
 	"PFleetManagement/logic/fleetErrors"
 	"PFleetManagement/logic/model"
 	"context"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -23,15 +24,26 @@ type fleet struct {
 	Vins    []model.Vin   `bson:"vins"`
 }
 
-func OpenDatabase(config *Config) (FleetDB, error) {
+func OpenDatabase(config Config) (FleetDB, error) {
 	m := connection{}
 	return &m, m.setUpDatabase(config) // return the error (if) encountered in setup
 }
 
-func (m *connection) setUpDatabase(config *Config) error {
+func toConnectionUri(config Config) string {
+	return fmt.Sprintf(
+		"mongodb://%s:%s@%s:%d/%s",
+		config.GetMongoDbUser(),
+		config.GetMongoDbPassword(),
+		config.GetMongoDbHost(),
+		config.GetMongoDbPort(),
+		config.GetMongoDbDatabase(),
+	)
+}
+
+func (m *connection) setUpDatabase(config Config) error {
 	// create the client options and construct the MongoDB connection URI from environment variables
 	opts := options.Client()
-	opts.ApplyURI("mongodb://" + config.User + ":" + config.Password + "@" + config.Host + ":" + "27017" + "/" + config.Db)
+	opts.ApplyURI(toConnectionUri(config))
 
 	var err error
 
@@ -45,11 +57,16 @@ func (m *connection) setUpDatabase(config *Config) error {
 		return err
 	}
 
+	// ensure connection was successful
+	if err = m.client.Ping(ctx, nil); err != nil {
+		return err
+	}
+
 	// store an additional pointer to the database of which the name is given by the environment
-	m.database = m.client.Database(config.Db, options.Database())
+	m.database = m.client.Database(config.GetMongoDbDatabase(), options.Database())
 
 	// save the collection name
-	m.collection = config.CollectionPrefix + fleetCollectionBaseName
+	m.collection = config.GetAppCollectionPrefix() + fleetCollectionBaseName
 	return nil
 }
 

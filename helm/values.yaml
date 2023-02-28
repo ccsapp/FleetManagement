@@ -5,11 +5,13 @@ base-chart:
   affinity: {}
 
   extraEnvVars:
-    - name: PFL_ALLOW_ORIGINS
+    - name: FM_ALLOW_ORIGINS
       value: "*"
-    - name: PFL_DOMAIN_SERVER
+    - name: FM_CAR_SERVER
       value: https://cm-d-carimpl.cloud.iai.kit.edu
-    - name: PFL_DOMAIN_TIMEOUT
+    - name: FM_RENTAL_MANAGEMENT_SERVER
+      value: https://cm-rentalmgmt.cloud.iai.kit.edu
+    - name: FM_REQUEST_TIMEOUT
       value: 5s
     - name: PFL_RENTAL_MANAGEMENT_SERVER
       value: cm-rentalmgmt.cloud.iai.kit.edu
