@@ -1,6 +1,7 @@
 package main
 
 import (
+	"PFleetManagement/environment"
 	"PFleetManagement/infrastructure/database"
 	"PFleetManagement/testdata"
 	"PFleetManagement/testhelpers"
@@ -18,40 +19,51 @@ type ApiTestSuite struct {
 	suite.Suite
 	fleetDB            database.FleetDB
 	app                *echo.Echo
-	config             *Config
 	recordingFormatter *testhelpers.RecordingFormatter
 }
 
 func (suite *ApiTestSuite) SetupSuite() {
-	// load the environment variables for the database layer
-	dbConfig, err := database.LoadConfigFromFile("testdata/testdb.env")
-	if err != nil {
-		suite.T().Fatal(err.Error())
-	}
-
-	suite.config = &Config{
-		allowOrigins:            []string{"*"},
-		domainServer:            "https://carservice.kit.edu",
-		domainTimeout:           1,
-		rentalManagementServer:  "https://rentalmanagement.kit.edu",
-		rentalManagementTimeout: 1,
-	}
+	environment.SetupTestingEnvironment(
+		"https://carservice.kit.edu",
+		"https://rentalmanagement.kit.edu",
+	)
 
 	// generate a collection name so that concurrent executions do not interfere
-	dbConfig.CollectionPrefix = fmt.Sprintf("test-%d-", time.Now().Unix())
+	collectionPrefix := fmt.Sprintf("test-%d-", time.Now().Unix())
+	environment.GetEnvironment().SetAppCollectionPrefix(collectionPrefix)
 
-	suite.fleetDB, err = database.OpenDatabase(dbConfig)
+	var err error
+	suite.fleetDB, err = database.OpenDatabase(environment.GetEnvironment())
 	if err != nil {
-		suite.T().Fatal(err.Error())
+		suite.handleDbConnectionError(err)
 	}
 
-	suite.app, err = newApp(suite.config, suite.fleetDB)
+	suite.app, err = newApp(suite.fleetDB)
 	if err != nil {
 		suite.T().Fatal(err.Error())
 	}
 
 	// we need to initially clear the database since by default, an empty fleet is inserted into the database
 	suite.clearCollection()
+}
+
+func (suite *ApiTestSuite) handleDbConnectionError(err error) {
+	// if local setup mode is disabled, we fail without any additional checks
+	if !environment.GetEnvironment().IsLocalSetupMode() {
+		suite.T().Fatal(err.Error())
+	}
+
+	running, dockerErr := testhelpers.IsMongoDbContainerRunning()
+	if dockerErr != nil {
+		suite.T().Fatal(dockerErr.Error())
+	}
+	if !running {
+		suite.T().Fatal("MongoDB container is not running. " +
+			"Please start it with 'docker compose up -d' and try again.")
+	}
+	fmt.Println("MongoDB container seems to be running, but the connection could not be established. " +
+		"Please check the logs for more information.")
+	suite.T().Fatal(err.Error())
 }
 
 func (suite *ApiTestSuite) clearCollection() {
@@ -113,13 +125,13 @@ func (suite *ApiTestSuite) newApiTestWithCarAndRentalMocks() *apitest.APITest {
 func (suite *ApiTestSuite) newCarMock() []*apitest.Mock {
 	return []*apitest.Mock{
 		apitest.NewMock().
-			Get(suite.config.domainServer + "/cars/" + testdata.VinCar).
+			Get(environment.GetEnvironment().GetCarServerUrl() + "/cars/" + testdata.VinCar).
 			RespondWith().Status(http.StatusOK).Body(testdata.ExampleCar).End(),
 		apitest.NewMock().
-			Get(suite.config.domainServer + "/cars/" + testdata.VinCar2).
+			Get(environment.GetEnvironment().GetCarServerUrl() + "/cars/" + testdata.VinCar2).
 			RespondWith().Status(http.StatusOK).Body(testdata.ExampleCar2).End(),
 		apitest.NewMock().
-			Get(suite.config.domainServer + "/cars/" + testdata.UnknownVin).
+			Get(environment.GetEnvironment().GetCarServerUrl() + "/cars/" + testdata.UnknownVin).
 			RespondWith().Status(http.StatusNotFound).End(),
 	}
 }
@@ -127,10 +139,10 @@ func (suite *ApiTestSuite) newCarMock() []*apitest.Mock {
 func (suite *ApiTestSuite) newRentalMock() []*apitest.Mock {
 	return []*apitest.Mock{
 		apitest.NewMock().
-			Get(suite.config.rentalManagementServer + "/cars/" + testdata.VinCar + "/rentalStatus").
+			Get(environment.GetEnvironment().GetRentalServerUrl() + "/cars/" + testdata.VinCar + "/rentalStatus").
 			RespondWith().Status(http.StatusNoContent).End(),
 		apitest.NewMock().
-			Get(suite.config.rentalManagementServer + "/cars/" + testdata.VinCar2 + "/rentalStatus").
+			Get(environment.GetEnvironment().GetRentalServerUrl() + "/cars/" + testdata.VinCar2 + "/rentalStatus").
 			RespondWith().Status(http.StatusOK).Body(testdata.ExampleRental).End(),
 	}
 }
