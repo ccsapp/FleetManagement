@@ -15,16 +15,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"log"
 	"net/http"
-	"time"
 )
-
-type Config struct {
-	allowOrigins            []string
-	domainServer            string
-	domainTimeout           time.Duration
-	rentalManagementServer  string
-	rentalManagementTimeout time.Duration
-}
 
 // newApp allows production as well as testing to create a new Echo instance for the API.
 // Configuration values are read from the environment with environment.GetEnvironment().
@@ -88,5 +79,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	e.Logger.Fatal(fmt.Sprintf(":%d", environment.GetEnvironment().GetAppExposePort()))
+	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", environment.GetEnvironment().GetAppExposePort())))
 }
