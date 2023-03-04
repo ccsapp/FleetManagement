@@ -21,7 +21,7 @@ var (
 	// ErrDomainAssertion occurs when an unexpected response is received from the Car microservice
 	ErrDomainAssertion = errors.New("unexpected response from domain service")
 
-	// ErrRMAssertion occurs when an unexpected response is received from the RentalManagement microservice
+	// ErrRentalManagementAssertion occurs when an unexpected response is received from the RentalManagement microservice
 	ErrRentalManagementAssertion = errors.New("unexpected response from rental management service")
 
 	// ErrInvalidVin shows that the format of a VIN is invalid
