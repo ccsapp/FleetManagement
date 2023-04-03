@@ -13,7 +13,7 @@ import (
 	"net/url"
 	"strings"
 
-	carTypes "git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/domain/d-cargotypes.git"
+	carTypes "github.com/ccsapp/cargotypes"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 )
 
