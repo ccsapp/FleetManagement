@@ -11,20 +11,16 @@ import (
 )
 
 const (
-	envMongoDbHost         = "MONGODB_DATABASE_HOST"
-	envMongoDbPort         = "MONGODB_DATABASE_PORT"
-	envMongoDbDatabase     = "MONGODB_DATABASE_NAME"
-	envMongoDbUser         = "MONGODB_DATABASE_USER"
-	envMongoDbPassword     = "MONGODB_DATABASE_PASSWORD"
-	envAppExposePort       = "FM_EXPOSE_PORT"
-	envAppCollectionPrefix = "FM_COLLECTION_PREFIX"
-	envCarServerUrl        = "FM_CAR_SERVER"
-	envRentalServerUrl     = "FM_RENTAL_MANAGEMENT_SERVER"
-	envRequestTimeout      = "FM_REQUEST_TIMEOUT"
-	envAllowOrigins        = "FM_ALLOW_ORIGINS"
-	envLocalSetupMode      = "FM_LOCAL_SETUP"
+	envMongoDbConnectionString = "MONGODB_CONNECTION_STRING"
+	envMongoDbDatabase         = "MONGODB_DATABASE_NAME"
+	envAppExposePort           = "FM_EXPOSE_PORT"
+	envAppCollectionPrefix     = "FM_COLLECTION_PREFIX"
+	envCarServerUrl            = "FM_CAR_SERVER"
+	envRentalServerUrl         = "FM_RENTAL_MANAGEMENT_SERVER"
+	envRequestTimeout          = "FM_REQUEST_TIMEOUT"
+	envAllowOrigins            = "FM_ALLOW_ORIGINS"
+	envLocalSetupMode          = "FM_LOCAL_SETUP"
 
-	defaultMongoDbPort         = 27017
 	defaultAppExposePort       = 80
 	defaultAppCollectionPrefix = ""
 	defaultRequestTimeout      = 5 * time.Second
@@ -71,18 +67,15 @@ func populateEnvWithLocalSetupDefaults() {
 // If any of the required environment variables is not set, the program will panic.
 func readEnvironmentFromEnv() *Environment {
 	return &Environment{
-		mongoDbHost:         getStringEnvVariable(envMongoDbHost, nil),
-		mongoDbPort:         getIntegerEnvVariable(envMongoDbPort, ptr(defaultMongoDbPort)),
-		mongoDbDatabase:     getStringEnvVariable(envMongoDbDatabase, nil),
-		mongoDbUser:         getStringEnvVariable(envMongoDbUser, nil),
-		mongoDbPassword:     getStringEnvVariable(envMongoDbPassword, nil),
-		appExposePort:       getIntegerEnvVariable(envAppExposePort, ptr(defaultAppExposePort)),
-		appCollectionPrefix: getStringEnvVariable(envAppCollectionPrefix, ptr(defaultAppCollectionPrefix)),
-		carServerUrl:        getStringEnvVariable(envCarServerUrl, nil),
-		rentalServerUrl:     getStringEnvVariable(envRentalServerUrl, nil),
-		requestTimeout:      getDurationEnvVariable(envRequestTimeout, ptr(defaultRequestTimeout)),
-		allowOrigins:        getStringArrayEnvVariable(envAllowOrigins, &defaultAllowOrigins),
-		isLocalSetupMode:    getBooleanEnvVariable(envLocalSetupMode),
+		mongoDbConnectionString: getStringEnvVariable(envMongoDbConnectionString, nil),
+		mongoDbDatabase:         getStringEnvVariable(envMongoDbDatabase, nil),
+		appExposePort:           getIntegerEnvVariable(envAppExposePort, ptr(defaultAppExposePort)),
+		appCollectionPrefix:     getStringEnvVariable(envAppCollectionPrefix, ptr(defaultAppCollectionPrefix)),
+		carServerUrl:            getStringEnvVariable(envCarServerUrl, nil),
+		rentalServerUrl:         getStringEnvVariable(envRentalServerUrl, nil),
+		requestTimeout:          getDurationEnvVariable(envRequestTimeout, ptr(defaultRequestTimeout)),
+		allowOrigins:            getStringArrayEnvVariable(envAllowOrigins, &defaultAllowOrigins),
+		isLocalSetupMode:        getBooleanEnvVariable(envLocalSetupMode),
 	}
 }
 

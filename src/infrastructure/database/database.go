@@ -4,7 +4,6 @@ import (
 	"PFleetManagement/logic/fleetErrors"
 	"PFleetManagement/logic/model"
 	"context"
-	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -29,21 +28,10 @@ func OpenDatabase(config Config) (FleetDB, error) {
 	return &m, m.setUpDatabase(config) // return the error (if) encountered in setup
 }
 
-func toConnectionUri(config Config) string {
-	return fmt.Sprintf(
-		"mongodb://%s:%s@%s:%d/%s",
-		config.GetMongoDbUser(),
-		config.GetMongoDbPassword(),
-		config.GetMongoDbHost(),
-		config.GetMongoDbPort(),
-		config.GetMongoDbDatabase(),
-	)
-}
-
 func (m *connection) setUpDatabase(config Config) error {
 	// create the client options and construct the MongoDB connection URI from environment variables
 	opts := options.Client()
-	opts.ApplyURI(toConnectionUri(config))
+	opts.ApplyURI(config.GetMongoDbConnectionString())
 
 	var err error
 

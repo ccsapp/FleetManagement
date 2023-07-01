@@ -1,23 +1,22 @@
 # FleetManagement
 
 FleetManagement provides the functionality for the capability
-[Management of the Fleet](https://git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/0-doc-ccs-app-v-2/-/blob/main/pages/capabilities.md)
+[Management of the Fleet](https://github.com/ccsapp/docs/blob/main/pages/capabilities.md)
 via API endpoints dedicated to individual
-[use cases](https://git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/0-doc-ccs-app-v-2/-/blob/main/pages/use_case_diagram.md). 
+[use cases](https://github.com/ccsapp/docs/blob/main/pages/use_case_diagram.md). 
 
 For the implementation of the business logic required for the use cases, FleetManagement orchestrates 
-[Car](https://git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/domain/d-carimpl) to access required data.
-Therefore, it depends on the private Git repository
-[CarGoTypes](https://git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/domain/d-cargotypes)
-to provide mappings for the JSON responses. Further information on the usage of private Git repositories with
-Go can be found there.
+[Car](https://github.com/ccsapp/Car) to access required data.
+Therefore, it depends on the Git repository
+[cargotypes](https://github.com/ccsapp/cargotypes)
+to provide mappings for the JSON responses.
 
 ## Design 
 
 [Task Processes](pages/task_processes.md) 
 
 The provided API endpoints of FleetManagement are specified in the
-[API specification](https://git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/application/p-fleetmanagementdesign). 
+[API specification](https://github.com/ccsapp/FleetManagementDesign/blob/main/openapi.yaml). 
 
 ## :warning: CORS Warning
 
@@ -65,19 +64,16 @@ correct docker compose stack is running and will print a warning if it is not.
 Do not use the local setup mode in a deployment or a custom setup, i.e. do not set the `FM_LOCAL_SETUP` environment
 variable. Instead, use the following environment variables to configure the microservice:
 
-| Environment Variable          | Local Setup Value       | Required for Testing? | Comment                                                                                                                                                  |
-|-------------------------------|-------------------------|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `MONGODB_DATABASE_HOST`       | localhost               | yes                   |                                                                                                                                                          |
-| `MONGODB_DATABASE_PORT`       | 27031                   | yes                   | Optional, defaults to 27017. The local setup uses a non-default port!                                                                                    |
-| `MONGODB_DATABASE_NAME`       | ccsappvp2fleet          | yes                   |                                                                                                                                                          |
-| `MONGODB_DATABASE_USER`       | root                    | yes                   |                                                                                                                                                          |
-| `MONGODB_DATABASE_PASSWORD`   | example                 | yes                   |                                                                                                                                                          |
-| `FM_EXPOSE_PORT`              | 8011                    | no                    | Optional, defaults to 80. This is the port this microservice is exposing. The local setup exposes a non-default port!                                    |
-| `FM_COLLECTION_PREFIX`        | localSetup-             | no                    | Optional. A (unique) prefix that is prepended to every database collection of this service.                                                              |
-| `FM_CAR_SERVER`               | `http://localhost:8001` | no                    | The URL of the Car server of the domain layer.                                                                                                           |
-| `FM_RENTAL_MANAGEMENT_SERVER` | `http://localhost:8012` | no                    | The URL of the RentalManagement server.                                                                                                                  |
-| `FM_REQUEST_TIMEOUT`          | 5s                      | no                    | Optional. The timeout for requests to the Car and RentalManagement server ([number with suffix](https://pkg.go.dev/time#ParseDuration)). Defaults to 5s. |
-| `FM_ALLOW_ORIGINS`            | *                       | no                    | Optional. A comma-separated list of allowed origins for CORS requests. By default, no additional origins are allowed.                                    |                          
+| Environment Variable          | Local Setup Value                                     | Required for Testing? | Comment                                                                                                                                                  |
+|-------------------------------|-------------------------------------------------------|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `MONGODB_CONNECTION_STRING`   | mongodb://root:example@localhost:27031/ccsappvp2fleet | yes                   | The local setup uses a non-default port!                                                                                                                 |
+| `MONGODB_DATABASE_NAME`       | ccsappvp2fleet                                        | yes                   |                                                                                                                                                          |
+| `FM_EXPOSE_PORT`              | 8011                                                  | no                    | Optional, defaults to 80. This is the port this microservice is exposing. The local setup exposes a non-default port!                                    |
+| `FM_COLLECTION_PREFIX`        | localSetup-                                           | no                    | Optional. A (unique) prefix that is prepended to every database collection of this service.                                                              |
+| `FM_CAR_SERVER`               | `http://localhost:8001`                               | no                    | The URL of the Car server of the domain layer.                                                                                                           |
+| `FM_RENTAL_MANAGEMENT_SERVER` | `http://localhost:8012`                               | no                    | The URL of the RentalManagement server.                                                                                                                  |
+| `FM_REQUEST_TIMEOUT`          | 5s                                                    | no                    | Optional. The timeout for requests to the Car and RentalManagement server ([number with suffix](https://pkg.go.dev/time#ParseDuration)). Defaults to 5s. |
+| `FM_ALLOW_ORIGINS`            | *                                                     | no                    | Optional. A comma-separated list of allowed origins for CORS requests. By default, no additional origins are allowed.                                    |                          
 
 ## Testing
 

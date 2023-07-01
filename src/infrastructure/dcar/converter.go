@@ -2,7 +2,7 @@ package dcar
 
 import (
 	"PFleetManagement/logic/model"
-	carTypes "git.scc.kit.edu/cm-tm/cm-team/projectwork/pse/domain/d-cargotypes.git"
+	carTypes "github.com/ccsapp/cargotypes"
 )
 
 func toModelFromTechnicalSpecification(t *carTypes.TechnicalSpecification) model.TechnicalSpecification {
