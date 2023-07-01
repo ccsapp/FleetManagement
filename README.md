@@ -16,15 +16,11 @@ to provide mappings for the JSON responses.
 [Task Processes](pages/task_processes.md) 
 
 The provided API endpoints of FleetManagement are specified in the
-[API specification](https://github.com/ccsapp/FleetManagementDesign/blob/main/openapi.yaml). 
-
-## :warning: CORS Warning
-
-The current HELM deployment of this microservice allows requests from all origins. This is a security risk and should
-be changed in production! Currently, this is needed for the frontend development to be able to access the API.
+[API specification](https://github.com/ccsapp/FleetManagementDesign/blob/main/openapi.yaml).
 
 ## Local Setup Mode
-To run the microservice Car locally, you can use the MongoDB setup provided in the `dev` directory.
+> ⚠️ CORS Warning: The local setup mode of this microservice allows requests from all origins.
+> In production, this is a security risk! For production deployments, use custom configuration values with an appropriate value for FM_ALLOW_ORIGINS.
 
 To do so, execute the following commands:
 ```bash
